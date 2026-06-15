@@ -1,0 +1,50 @@
+master:
+  amivoice.uri: "ws://speech.internal.assistant.com:8000/ws"
+  amivoice.language: "日本語"
+  amivoice.engine: "入力汎用"
+  amivoice.keep_filter_token: "true"
+  amivoice.probability: "0.7"
+  amivoice.detection_flag: "検出しない"
+  amivoice.save_log: "false"
+  pbx.db.name: "save.db"
+  context.settings.url: "https://reserve.drjoy.jp/api/anonymous/dr/ha/pbx/context-model"
+  acceptance_times.url: "https://reserve.drjoy.jp/api/anonymous/dr/ha/incoming-call-by-brekeke"
+  rag_ssml.url: "https://reserve.drjoy.jp/api/anonymous/dr/ha/rag-ssml/process-text"
+  openAI_generate.url: "https://reserve.drjoy.jp/api/anonymous/dr/ha/openai/generate-text"
+  speech.rag.url: "http://speech.internal.assistant.com:8000/api/v1/rag"
+  speech.rag.connect_timeout: "2"
+  speech.rag.request_timeout: "3"
+  speech.rag.credibility: "0"
+  entity_classifier.url: "https://reserve.drjoy.jp/api/anonymous/dr/ha/brekeke-entity-classification"
+  get-intonation-from-drjoy.url: "https://reserve.drjoy.jp/api/anonymous/dr/ha/brekeke-replace-intonation"
+  drjoy.save.url: "https://reserve.drjoy.jp/api/anonymous/dr/ha/brekeke-booking-ai"
+  phone_2_name.url: "https://reserve.drjoy.jp/api/anonymous/dr/ha/phone-to-name"
+
+demo:
+  amivoice.uri: "ws://10.0.20.11:8000/ws"
+  amivoice.language: "日本語"
+  amivoice.engine: "入力汎用"
+  amivoice.keep_filter_token: "true"
+  amivoice.probability: "0.7"
+  amivoice.detection_flag: "検出しない"
+  amivoice.save_log: "false"
+  pbx.db.name: "save.db"
+  context.settings.url: "https://demo-reserve.famishare.jp/api/anonymous/dr/ha/pbx/context-model"
+  acceptance_times.url: "https://demo-reserve.famishare.jp/api/anonymous/dr/ha/incoming-call-by-brekeke"
+  rag_ssml.url: "https://demo-reserve.famishare.jp/api/anonymous/dr/ha/rag-ssml/process-text"
+  openAI_generate.url: "https://demo-reserve.famishare.jp/api/anonymous/dr/ha/openai/generate-text"
+  speech.rag.url: "http://10.0.20.11:8000/api/v1/rag"
+  speech.rag.connect_timeout: "2"
+  speech.rag.request_timeout: "3"
+  speech.rag.credibility: "0"
+  entity_classifier.url: "https://demo-reserve.famishare.jp/api/anonymous/dr/ha/brekeke-entity-classification"
+  get-intonation-from-drjoy.url: "https://demo-reserve.famishare.jp/api/anonymous/dr/ha/brekeke-replace-intonation"
+  drjoy.save.url: "https://demo-reserve.famishare.jp/api/anonymous/dr/ha/brekeke-booking-ai"
+  phone_2_name.url: "https://demo-reserve.famishare.jp/api/anonymous/dr/ha/phone-to-name"
+
+# Các field này là optional — user có thể thay đổi, bỏ qua khi check
+optional_fields:
+  - announce
+  - office_id
+  - amivoice.silent_detection_ms
+  - amivoice.timeout_ms

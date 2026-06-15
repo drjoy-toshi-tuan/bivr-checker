@@ -1,0 +1,7 @@
+# Danh sách số điện thoại test của DrJOY
+# Nếu số chuyển tiếp trong file BIVR trùng với các số này → WARNING
+test_numbers:
+  - "05017074509"
+  - "05017066071"
+  - "05017405708"
+  - "05017070320"
