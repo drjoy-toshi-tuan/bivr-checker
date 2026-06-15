@@ -4,7 +4,11 @@ bivr-checker: Công cụ kiểm tra file BIVR (Brekeke IVR)
 Output: Báo cáo Markdown bằng tiếng Việt (固有名詞のみ日本語)
 
 Cách dùng:
-  python main.py <file.bivr> <ivr.properties> <master|demo> [--compare <prod.bivr>] [--output report.md]
+  python main.py <file.bivr> <master|demo> [--props <ivr.properties>] [--compare <prod.bivr>]
+                 [--only api phone jump diff] [--output report.md]
+
+Ví dụ chỉ check số điện thoại:
+  python main.py file.bivr master --only phone
 """
 import argparse
 import sys
@@ -23,22 +27,50 @@ from bivr_checker.checks.jump_to_flow import check_jump_to_flow
 from bivr_checker.checks.diff import diff_flows
 from bivr_checker.reporter import generate_report
 
+ALL_CHECKS = {"api", "phone", "jump"}
+
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Công cụ kiểm tra file BIVR (Brekeke IVR)"
+        description="Công cụ kiểm tra file BIVR (Brekeke IVR)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Các phần check:\n"
+            "  api   — Kiểm tra API URL trong IVR Properties\n"
+            "  phone — Kiểm tra số điện thoại chuyển tiếp\n"
+            "  jump  — Kiểm tra Jump to Flow\n"
+            "  diff  — So sánh với bản hiện hành (cần --compare)\n"
+            "\nVí dụ:\n"
+            "  python main.py file.bivr master --props ivr.properties\n"
+            "  python main.py file.bivr master --only phone\n"
+            "  python main.py file.bivr master --only phone jump\n"
+            "  python main.py file.bivr master --props ivr.properties --compare prod.bivr --only diff\n"
+        ),
     )
     parser.add_argument("bivr", help="Đường dẫn đến file .bivr cần kiểm tra")
-    parser.add_argument("ivr_props", help="Đường dẫn đến file IVR Properties")
     parser.add_argument(
         "environment",
         choices=["master", "demo"],
         help="Môi trường: master (本番) hoặc demo (デモ)",
     )
     parser.add_argument(
+        "--props",
+        metavar="IVR.PROPERTIES",
+        help="Đường dẫn đến file IVR Properties (bắt buộc khi check api)",
+        default=None,
+    )
+    parser.add_argument(
         "--compare",
         metavar="PROD_BIVR",
-        help="File .bivr bản hiện hành để so sánh diff (e)",
+        help="File .bivr bản hiện hành để so sánh diff (bắt buộc khi check diff)",
+        default=None,
+    )
+    parser.add_argument(
+        "--only",
+        nargs="+",
+        choices=["api", "phone", "jump", "diff"],
+        metavar="CHECK",
+        help="Chỉ chạy check được chỉ định: api, phone, jump, diff (mặc định: tất cả)",
         default=None,
     )
     parser.add_argument(
@@ -49,33 +81,60 @@ def main():
     )
     args = parser.parse_args()
 
-    print(f"[1/4] Đang đọc file BIVR: {args.bivr}")
+    # Xác định các phần cần check
+    selected = set(args.only) if args.only else ALL_CHECKS | ({"diff"} if args.compare else set())
+
+    # Validate
+    if "api" in selected and not args.props:
+        print("Lỗi: Check 'api' cần file IVR Properties. Dùng --props <file>.")
+        sys.exit(1)
+    if "diff" in selected and not args.compare:
+        print("Lỗi: Check 'diff' cần file so sánh. Dùng --compare <prod.bivr>.")
+        sys.exit(1)
+
+    print(f"[1/{3 + (1 if args.compare else 0)}] Đang đọc file BIVR: {args.bivr}")
     flows = parse_bivr(args.bivr)
     flow_list = ", ".join(flows.keys())
     print(f"      → {len(flows)} flow(s): {flow_list}")
 
-    print(f"[2/4] Đang đọc IVR Properties: {args.ivr_props}")
-    ivr_props = parse_ivr_properties(args.ivr_props)
-    print(f"      → {len(ivr_props)} field(s)")
+    ivr_props = None
+    if "api" in selected:
+        print(f"[2/...] Đang đọc IVR Properties: {args.props}")
+        ivr_props = parse_ivr_properties(args.props)
+        print(f"        → {len(ivr_props)} field(s)")
 
-    print(f"[3/4] Đang kiểm tra (môi trường: {args.environment})...")
-    api_issues = check_api_urls(ivr_props, args.environment)
-    print(f"      (a) API URL       : {len(api_issues)} vấn đề")
+    env_label = "master (本番)" if args.environment == "master" else "demo (デモ)"
+    print(f"[Kiểm tra] Môi trường: {env_label} | Phần check: {', '.join(sorted(selected))}")
 
-    phone_issues = check_phone_numbers(flows)
-    print(f"      (b) Số điện thoại : {len(phone_issues)} vấn đề")
+    # Chạy từng phần check
+    api_issues = None
+    if "api" in selected:
+        api_issues = check_api_urls(ivr_props, args.environment)
+        errors = sum(1 for i in api_issues if i.get("severity") == "ERROR")
+        print(f"  API URL       : {errors} lỗi")
 
-    jump_issues = check_jump_to_flow(flows)
-    print(f"      (c)(d) Jump Flow  : {len(jump_issues)} vấn đề")
+    phone_issues = None
+    if "phone" in selected:
+        phone_issues = check_phone_numbers(flows)
+        transfers = sum(1 for i in phone_issues if i.get("type") == "transfer_number")
+        warnings = sum(1 for i in phone_issues if i.get("severity") == "WARNING")
+        print(f"  Số điện thoại : {transfers} số tìm thấy, {warnings} cảnh báo")
+
+    jump_issues = None
+    if "jump" in selected:
+        jump_issues = check_jump_to_flow(flows)
+        errors = sum(1 for i in jump_issues if i.get("severity") == "ERROR")
+        warnings = sum(1 for i in jump_issues if i.get("severity") == "WARNING")
+        print(f"  Jump to Flow  : {errors} lỗi, {warnings} cảnh báo")
 
     diff_issues = None
-    if args.compare:
-        print(f"      (e) So sánh với  : {args.compare}")
+    if "diff" in selected and args.compare:
+        print(f"  So sánh với  : {args.compare}")
         flows_prod = parse_bivr(args.compare)
         diff_issues = diff_flows(flows_prod, flows)
-        print(f"           → {len(diff_issues)} khác biệt")
+        print(f"               → {len(diff_issues)} khác biệt")
 
-    print("[4/4] Đang tạo báo cáo Markdown...")
+    print("Đang tạo báo cáo Markdown...")
     report = generate_report(
         bivr_path=args.bivr,
         environment=args.environment,
@@ -90,8 +149,9 @@ def main():
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(report)
 
-    total_errors = sum(1 for i in (api_issues + phone_issues + jump_issues + (diff_issues or [])) if i.get("severity") == "ERROR")
-    total_warnings = sum(1 for i in (api_issues + phone_issues + jump_issues + (diff_issues or [])) if i.get("severity") == "WARNING")
+    all_issues = (api_issues or []) + (phone_issues or []) + (jump_issues or []) + (diff_issues or [])
+    total_errors = sum(1 for i in all_issues if i.get("severity") == "ERROR")
+    total_warnings = sum(1 for i in all_issues if i.get("severity") == "WARNING")
 
     print(f"\n{'✅ PASS' if total_errors == 0 else '❌ FAIL'} — Báo cáo: {output_path}")
     print(f"   🔴 Lỗi: {total_errors}   🟡 Cảnh báo: {total_warnings}")

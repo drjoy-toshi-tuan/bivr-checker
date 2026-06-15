@@ -1,10 +1,17 @@
 """
-(c) Kiểm tra tính nhất quán của Jump to Flow — tên subflow có tồn tại không
-(d) Kiểm tra module Jump to Flow chưa được cài đặt đích (flowname rỗng)
+Kiểm tra tính nhất quán của Jump to Flow — tên flow đích có tồn tại không,
+và module Jump to Flow chưa được cài đặt đích (flowname rỗng).
+Subflow (tên chứa S｜, サブ｜, サブ, Sub...) được phép có flowname rỗng → WARNING, không phải ERROR.
 """
 from typing import List, Dict
 
 JUMP_TYPE = "drjoy^Custom Module$Custom Jump to Flow"
+SUBFLOW_MARKERS = ("S｜", "サブ｜", "サブ", "Sub｜", "Sub", "sub｜", "sub")
+
+
+def _is_subflow(flow_name: str) -> bool:
+    part = flow_name.split("$", 1)[1] if "$" in flow_name else flow_name
+    return any(part.startswith(m) for m in SUBFLOW_MARKERS)
 
 
 def check_jump_to_flow(flows: dict) -> List[Dict]:
@@ -18,18 +25,19 @@ def check_jump_to_flow(flows: dict) -> List[Dict]:
 
             flowname = module.get("params", {}).get("flowname", "")
 
-            # (d) flowname rỗng
             if not flowname:
+                # Subflow không có đích jump là có chủ đích → WARNING
+                severity = "WARNING" if _is_subflow(flow_name) else "ERROR"
                 issues.append({
                     "type": "empty_jump_target",
-                    "severity": "ERROR",
+                    "severity": severity,
                     "flow": flow_name,
                     "module": mod_name,
                     "target": None,
                 })
                 continue
 
-            # (c) flowname có dạng "drjoy^<tên flow thực>"
+            # flowname có dạng "drjoy^<tên flow thực>"
             target = flowname[len("drjoy^"):] if flowname.startswith("drjoy^") else flowname
             if target not in flow_names:
                 issues.append({

@@ -10,6 +10,7 @@ _TYPE_VI = {
     "missing_field": "Field bị thiếu trong IVR Properties",
     "value_mismatch": "Giá trị không khớp với môi trường",
     # phone_number
+    "transfer_number": "Số điện thoại chuyển tiếp",
     "test_number_in_transfer": "Số test được dùng làm số chuyển tiếp (転送先)",
     "test_number_in_prompt": "Số test xuất hiện trong TTS prompt",
     # jump_to_flow
@@ -36,7 +37,7 @@ def _section_header(title: str) -> List[str]:
 
 
 def _render_api_issues(issues: List[Dict], env_label: str) -> List[str]:
-    lines = _section_header(f"(a) Kiểm tra API URL — IVR Properties")
+    lines = _section_header("Kiểm tra API URL — IVR Properties")
     if not issues:
         lines += [f"🟢 Tất cả URL đều đúng với môi trường **{env_label}**.", ""]
         return lines
@@ -55,26 +56,42 @@ def _render_api_issues(issues: List[Dict], env_label: str) -> List[str]:
 
 
 def _render_phone_issues(issues: List[Dict]) -> List[str]:
-    lines = _section_header("(b) Kiểm tra số điện thoại chuyển tiếp (転送先番号)")
-    if not issues:
+    lines = _section_header("Kiểm tra số điện thoại chuyển tiếp (転送先番号)")
+
+    transfer_numbers = [i for i in issues if i.get("type") == "transfer_number"]
+    warnings = [i for i in issues if i.get("severity") == "WARNING"]
+
+    # Bảng tất cả số điện thoại chuyển tiếp
+    if transfer_numbers:
+        lines += ["### Danh sách số điện thoại chuyển tiếp trong BIVR", ""]
+        lines += ["| Flow | Module | Số điện thoại | Ghi chú |", "|---|---|---|---|"]
+        for i in transfer_numbers:
+            note = "⚠️ Số test" if i.get("is_test") else ""
+            lines.append(f"| `{i['flow']}` | `{i['module']}` | `{i['number']}` | {note} |")
+        lines.append("")
+    else:
+        lines += ["🟢 Không có module chuyển tiếp nào trong BIVR.", ""]
+
+    # Cảnh báo số test
+    if not warnings:
         lines += ["🟢 Không phát hiện số test nào trong cài đặt chuyển tiếp.", ""]
-        return lines
-    for i in issues:
-        e = _EMOJI.get(i["severity"], "⚪")
-        lbl = _LABEL.get(i["severity"], "")
-        lines += [
-            f"### {e} {lbl} — Flow: `{i['flow']}`",
-            "",
-            f"- **Module**: `{i['module']}`",
-            f"- **Số điện thoại**: `{i['number']}`",
-            f"- **Mô tả**: {_TYPE_VI.get(i['type'], i['type'])}",
-            "",
-        ]
+    else:
+        for i in warnings:
+            e = _EMOJI.get(i["severity"], "⚪")
+            lbl = _LABEL.get(i["severity"], "")
+            lines += [
+                f"### {e} {lbl} — Flow: `{i['flow']}`",
+                "",
+                f"- **Module**: `{i['module']}`",
+                f"- **Số điện thoại**: `{i['number']}`",
+                f"- **Mô tả**: {_TYPE_VI.get(i['type'], i['type'])}",
+                "",
+            ]
     return lines
 
 
 def _render_jump_issues(issues: List[Dict]) -> List[str]:
-    lines = _section_header("(c)(d) Kiểm tra Jump to Flow")
+    lines = _section_header("Kiểm tra Jump to Flow")
     if not issues:
         lines += ["🟢 Tất cả cài đặt Jump to Flow đều hợp lệ.", ""]
         return lines
@@ -93,7 +110,7 @@ def _render_jump_issues(issues: List[Dict]) -> List[str]:
 
 
 def _render_diff_issues(issues: List[Dict], base_path: str) -> List[str]:
-    lines = _section_header("(e) So sánh với bản hiện hành (差分)")
+    lines = _section_header("So sánh với bản hiện hành (差分)")
     lines += [f"**File so sánh**: `{base_path}`", ""]
     if not issues:
         lines += ["🟢 Không có sự khác biệt nào.", ""]
@@ -117,16 +134,17 @@ def _render_diff_issues(issues: List[Dict], base_path: str) -> List[str]:
 def generate_report(
     bivr_path: str,
     environment: str,
-    api_issues: List[Dict],
-    phone_issues: List[Dict],
-    jump_issues: List[Dict],
+    api_issues: Optional[List[Dict]],
+    phone_issues: Optional[List[Dict]],
+    jump_issues: Optional[List[Dict]],
     diff_issues: Optional[List[Dict]] = None,
     base_bivr_path: Optional[str] = None,
 ) -> str:
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     env_label = "本番 (Master)" if environment.lower() == "master" else "デモ (Demo)"
 
-    all_issues = api_issues + phone_issues + jump_issues + (diff_issues or [])
+    # Tính tổng lỗi/cảnh báo (không tính INFO)
+    all_issues = (api_issues or []) + (phone_issues or []) + (jump_issues or []) + (diff_issues or [])
     total_errors = _count(all_issues, "ERROR")
     total_warnings = _count(all_issues, "WARNING")
 
@@ -155,14 +173,19 @@ def generate_report(
         "",
     ]
 
-    lines += _render_api_issues(api_issues, env_label)
-    lines += ["---", ""]
-    lines += _render_phone_issues(phone_issues)
-    lines += ["---", ""]
-    lines += _render_jump_issues(jump_issues)
-
+    sections = []
+    if api_issues is not None:
+        sections.append(_render_api_issues(api_issues, env_label))
+    if phone_issues is not None:
+        sections.append(_render_phone_issues(phone_issues))
+    if jump_issues is not None:
+        sections.append(_render_jump_issues(jump_issues))
     if diff_issues is not None and base_bivr_path:
-        lines += ["---", ""]
-        lines += _render_diff_issues(diff_issues, base_bivr_path)
+        sections.append(_render_diff_issues(diff_issues, base_bivr_path))
+
+    for idx, section in enumerate(sections):
+        lines += section
+        if idx < len(sections) - 1:
+            lines += ["---", ""]
 
     return "\n".join(lines)

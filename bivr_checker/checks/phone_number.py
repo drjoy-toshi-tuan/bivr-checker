@@ -1,4 +1,4 @@
-"""(b) Kiểm tra số điện thoại chuyển tiếp — cảnh báo nếu là số test"""
+"""Kiểm tra số điện thoại chuyển tiếp — liệt kê tất cả số, cảnh báo nếu là số test"""
 import re
 from pathlib import Path
 from typing import List, Dict
@@ -20,7 +20,6 @@ def _extract_from_prompt(prompt: str) -> List[str]:
         r'<say-as[^>]*interpret-as=["\']telephone["\'][^>]*>([\d\-\s]+)</say-as>',
         prompt,
     )
-    # Thêm số điện thoại dạng thường (0X0-XXXX-XXXX)
     found += re.findall(r"\b(0\d{1,4}[-\s]?\d{1,4}[-\s]?\d{3,4})\b", prompt)
     return [_normalize(p) for p in found]
 
@@ -39,14 +38,26 @@ def check_phone_numbers(flows: dict) -> List[Dict]:
 
             if mod_type == TRANSFER_TYPE:
                 raw = params.get("number", "")
-                if raw and _normalize(raw) in test_numbers:
+                if raw:
+                    is_test = _normalize(raw) in test_numbers
+                    # Luôn ghi nhận số điện thoại (INFO)
                     issues.append({
-                        "type": "test_number_in_transfer",
-                        "severity": "WARNING",
+                        "type": "transfer_number",
+                        "severity": "INFO",
                         "flow": flow_name,
                         "module": mod_name,
                         "number": raw,
+                        "is_test": is_test,
                     })
+                    # Cảnh báo nếu là số test
+                    if is_test:
+                        issues.append({
+                            "type": "test_number_in_transfer",
+                            "severity": "WARNING",
+                            "flow": flow_name,
+                            "module": mod_name,
+                            "number": raw,
+                        })
 
             elif mod_type == TTS_TYPE:
                 prompt = params.get("prompt", "")
