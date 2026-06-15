@@ -1,4 +1,5 @@
 # bivr-checker
+<<<<<<< HEAD
 
 Công cụ kiểm tra file `.bivr` của hệ thống Brekeke IVR (DrJOY).  
 Đọc file cấu hình flow và IVR Properties, phát hiện lỗi cấu hình, sau đó xuất báo cáo Markdown bằng tiếng Việt.
@@ -269,3 +270,6 @@ Sau khi chạy, tool tạo một file `.md` với cấu trúc:
 ## (e) So sánh với bản hiện hành
 🟡 Module `転送` — params thay đổi
 ```
+=======
+Check IVR Properties và BIVR của Brekeke - Tạo báo cáo kết quả check
+>>>>>>> 3b17aef6f6bf9049a86b8f945ff71f39c882a8d5
