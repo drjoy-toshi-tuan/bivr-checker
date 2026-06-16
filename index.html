@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BIVR Checker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,58 +15,75 @@
 <div class="bg-orb bg-orb-1"></div>
 <div class="bg-orb bg-orb-2"></div>
 <div class="bg-orb bg-orb-3"></div>
+<div class="bg-grid"></div>
 
 <!-- ── Header ─────────────────────────────────────────────────────────────── -->
-<header class="glass header">
+<header class="header">
   <div class="header-inner">
     <div class="brand">
-      <span class="brand-icon">⬡</span>
-      <div>
+      <span class="brand-icon"><i class="fa-solid fa-diagram-project"></i></span>
+      <div class="brand-text">
         <h1 class="brand-title" data-i18n="app_title">BIVR チェッカー</h1>
         <p class="brand-sub" data-i18n="app_subtitle">Brekeke IVR ファイル検証ツール</p>
       </div>
     </div>
-    <button class="lang-btn" id="langBtn">Tiếng Việt</button>
+    <button class="lang-btn" id="langBtn">
+      <i class="fa-solid fa-language"></i>
+      <span>Tiếng Việt</span>
+    </button>
   </div>
 </header>
 
 <main class="main">
 
+  <!-- ── Hero ──────────────────────────────────────────────────────────────── -->
+  <section class="hero">
+    <h2 class="hero-title" data-i18n="hero_title">BIVR ファイルを安全に検証</h2>
+    <p class="hero-desc" data-i18n="hero_desc">ファイルをアップロードし、チェック項目を選択して実行するだけ。すべてブラウザ内で処理されます。</p>
+    <div class="hero-badges">
+      <span class="hero-badge"><i class="fa-solid fa-lock"></i> <span data-i18n="hero_badge_local">ローカル処理</span></span>
+      <span class="hero-badge"><i class="fa-solid fa-bolt"></i> <span data-i18n="hero_badge_fast">高速</span></span>
+      <span class="hero-badge"><i class="fa-solid fa-language"></i> <span data-i18n="hero_badge_bilingual">日本語 / Tiếng Việt</span></span>
+    </div>
+  </section>
+
   <!-- ── Step 1: Upload ────────────────────────────────────────────────────── -->
   <section class="card">
     <div class="step-header">
       <span class="step-badge">01</span>
-      <h2 class="step-title" data-i18n="step1_title">ファイルのアップロード</h2>
+      <div class="step-titles">
+        <h2 class="step-title"><i class="fa-solid fa-cloud-arrow-up step-ico"></i> <span data-i18n="step1_title">ファイルのアップロード</span></h2>
+      </div>
     </div>
 
     <div class="upload-grid">
       <!-- BIVR (required) -->
       <div class="upload-zone" id="bivrZone">
-        <span class="upload-icon">📄</span>
+        <span class="upload-icon-box req"><i class="fa-solid fa-file-zipper"></i></span>
         <span class="upload-label" data-i18n="bivr_label">BIVR ファイル（必須）</span>
         <span class="upload-hint" data-i18n="bivr_hint">.bivr をドラッグ＆ドロップ、またはクリックして選択</span>
         <span class="upload-filename" id="bivrName"></span>
-        <button class="file-clear" data-zone="bivrZone" data-input="bivrInput" data-key="bivrFile">×</button>
+        <button class="file-clear" data-zone="bivrZone" data-input="bivrInput" data-key="bivrFile"><i class="fa-solid fa-xmark"></i></button>
         <input type="file" id="bivrInput" accept=".bivr" hidden>
       </div>
 
       <!-- IVR Properties (optional) -->
       <div class="upload-zone" id="propsZone">
-        <span class="upload-icon">⚙️</span>
+        <span class="upload-icon-box"><i class="fa-solid fa-sliders"></i></span>
         <span class="upload-label" data-i18n="props_label">IVR Properties</span>
         <span class="upload-hint" data-i18n="props_hint">.properties ファイルをドラッグ＆ドロップ、またはクリックして選択</span>
         <span class="upload-filename" id="propsName"></span>
-        <button class="file-clear" data-zone="propsZone" data-input="propsInput" data-key="propsFile">×</button>
+        <button class="file-clear" data-zone="propsZone" data-input="propsInput" data-key="propsFile"><i class="fa-solid fa-xmark"></i></button>
         <input type="file" id="propsInput" accept=".properties,.txt,.ini" hidden>
       </div>
 
       <!-- Compare BIVR (optional) -->
       <div class="upload-zone" id="compareZone">
-        <span class="upload-icon">🔄</span>
+        <span class="upload-icon-box"><i class="fa-solid fa-code-compare"></i></span>
         <span class="upload-label" data-i18n="compare_label">BIVR（比較用）</span>
         <span class="upload-hint" data-i18n="compare_hint">現行版の .bivr ファイルをドラッグ＆ドロップ、またはクリックして選択</span>
         <span class="upload-filename" id="compareName"></span>
-        <button class="file-clear" data-zone="compareZone" data-input="compareInput" data-key="compareFile">×</button>
+        <button class="file-clear" data-zone="compareZone" data-input="compareInput" data-key="compareFile"><i class="fa-solid fa-xmark"></i></button>
         <input type="file" id="compareInput" accept=".bivr" hidden>
       </div>
     </div>
@@ -72,23 +93,25 @@
   <section class="card">
     <div class="step-header">
       <span class="step-badge">02</span>
-      <h2 class="step-title" data-i18n="step2_title">設定</h2>
+      <div class="step-titles">
+        <h2 class="step-title"><i class="fa-solid fa-sliders step-ico"></i> <span data-i18n="step2_title">設定</span></h2>
+      </div>
     </div>
 
     <div class="config-grid">
       <!-- Environment -->
       <div class="config-group">
-        <label data-i18n="env_label">環境</label>
+        <label class="group-label"><i class="fa-solid fa-server"></i> <span data-i18n="env_label">環境</span></label>
         <div class="radio-group">
           <label class="radio-label">
             <input type="radio" name="env" value="master" checked>
             <span class="radio-custom"></span>
-            <span class="check-label-text" data-i18n="env_master">本番 (Master)</span>
+            <span class="opt-text"><i class="fa-solid fa-circle-dot opt-ico"></i> <span class="check-label-text" data-i18n="env_master">本番 (Master)</span></span>
           </label>
           <label class="radio-label">
             <input type="radio" name="env" value="demo">
             <span class="radio-custom"></span>
-            <span class="check-label-text" data-i18n="env_demo">デモ (Demo)</span>
+            <span class="opt-text"><i class="fa-solid fa-flask opt-ico"></i> <span class="check-label-text" data-i18n="env_demo">デモ (Demo)</span></span>
           </label>
         </div>
       </div>
@@ -96,29 +119,29 @@
       <!-- Checks -->
       <div class="config-group">
         <div class="checks-header">
-          <label data-i18n="checks_label">チェック項目</label>
+          <label class="group-label"><i class="fa-solid fa-list-check"></i> <span data-i18n="checks_label">チェック項目</span></label>
           <button class="check-all-btn" id="checkAllBtn" data-i18n="check_all">すべて選択</button>
         </div>
         <div class="checks-grid">
           <label class="check-label">
             <input type="checkbox" class="check-input" value="api" checked>
             <span class="check-custom"></span>
-            <span class="check-label-text" data-i18n="check_api">API URL チェック</span>
+            <span class="opt-text"><i class="fa-solid fa-link opt-ico"></i> <span class="check-label-text" data-i18n="check_api">API URL チェック</span></span>
           </label>
           <label class="check-label">
             <input type="checkbox" class="check-input" value="phone" checked>
             <span class="check-custom"></span>
-            <span class="check-label-text" data-i18n="check_phone">電話番号チェック</span>
+            <span class="opt-text"><i class="fa-solid fa-phone-volume opt-ico"></i> <span class="check-label-text" data-i18n="check_phone">電話番号チェック</span></span>
           </label>
           <label class="check-label">
             <input type="checkbox" class="check-input" value="jump" checked>
             <span class="check-custom"></span>
-            <span class="check-label-text" data-i18n="check_jump">Jump to Flow チェック</span>
+            <span class="opt-text"><i class="fa-solid fa-arrow-right-arrow-left opt-ico"></i> <span class="check-label-text" data-i18n="check_jump">Jump to Flow チェック</span></span>
           </label>
           <label class="check-label disabled" id="diffCheckLabel">
             <input type="checkbox" class="check-input" value="diff" id="checkDiff" disabled>
             <span class="check-custom"></span>
-            <span class="check-label-text" data-i18n="check_diff">差分チェック（比較ファイル必須）</span>
+            <span class="opt-text"><i class="fa-solid fa-code-compare opt-ico"></i> <span class="check-label-text" data-i18n="check_diff">差分チェック（比較ファイル必須）</span></span>
           </label>
         </div>
       </div>
@@ -127,6 +150,7 @@
     <div class="run-row">
       <div class="error-msg" id="errorMsg" style="display:none"></div>
       <button class="btn-primary" id="runBtn">
+        <i class="fa-solid fa-play btn-ico" id="runIcon"></i>
         <span data-i18n="run_btn">チェック実行</span>
       </button>
     </div>
@@ -136,21 +160,32 @@
   <section class="card" id="step3" hidden>
     <div class="step-header">
       <span class="step-badge">03</span>
-      <h2 class="step-title" data-i18n="step3_title">結果</h2>
+      <div class="step-titles">
+        <h2 class="step-title"><i class="fa-solid fa-clipboard-check step-ico"></i> <span data-i18n="step3_title">結果</span></h2>
+      </div>
     </div>
 
     <div class="result-summary" id="resultSummary"></div>
 
     <div class="result-actions">
       <button class="btn-download" id="downloadBtn">
-        <span data-i18n="download_btn">⬇ Markdown レポートをダウンロード</span>
+        <i class="fa-solid fa-download"></i>
+        <span data-i18n="download_btn">Markdown レポートをダウンロード</span>
       </button>
     </div>
 
+    <div class="preview-head">
+      <i class="fa-solid fa-file-lines"></i>
+      <span data-i18n="preview_label">レポートプレビュー</span>
+    </div>
     <pre class="md-preview" id="resultPreview"></pre>
   </section>
 
 </main>
+
+<footer class="footer">
+  <span><i class="fa-solid fa-shield-halved"></i> <span data-i18n="footer_text">すべての処理はブラウザ内で完結します — ファイルはサーバーに送信されません</span></span>
+</footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="js/i18n.js"></script>

@@ -20,7 +20,7 @@ function applyLang(lang) {
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     el.placeholder = t(el.getAttribute('data-i18n-placeholder'))
   })
-  document.getElementById('langBtn').textContent = t('lang_toggle')
+  document.querySelector('#langBtn span').textContent = t('lang_toggle')
   updateCheckLabels()
 }
 
@@ -112,8 +112,10 @@ async function runChecks() {
   if (selected.includes('diff') && !state.compareFile) return showError(t('err_need_compare'))
 
   const btn = document.getElementById('runBtn')
+  const runIcon = document.getElementById('runIcon')
   btn.disabled = true
   btn.querySelector('[data-i18n]').textContent = t('running_btn')
+  runIcon.className = 'fa-solid fa-spinner fa-spin btn-ico'
 
   try {
     const flows = await parseBivr(state.bivrFile)
@@ -148,6 +150,7 @@ async function runChecks() {
   } finally {
     btn.disabled = false
     btn.querySelector('[data-i18n]').textContent = t('run_btn')
+    runIcon.className = 'fa-solid fa-play btn-ico'
   }
 }
 
@@ -159,11 +162,16 @@ function showResults(apiIssues, phoneIssues, jumpIssues, diffIssues, report) {
   const pass = errors === 0
 
   const summary = document.getElementById('resultSummary')
+  const vIcon = pass ? 'fa-circle-check' : 'fa-circle-xmark'
+  const vText = pass ? t('result_pass_text') : t('result_fail_text')
   summary.innerHTML = `
-    <div class="verdict ${pass ? 'pass' : 'fail'}">${pass ? t('result_pass') : t('result_fail')}</div>
+    <div class="verdict ${pass ? 'pass' : 'fail'}">
+      <i class="fa-solid ${vIcon}"></i>
+      <span>${vText}</span>
+    </div>
     <div class="stats">
-      <span class="stat stat-error">🔴 ${errors} ${t('errors_label')}</span>
-      <span class="stat stat-warning">🟡 ${warnings} ${t('warnings_label')}</span>
+      <span class="stat stat-error"><i class="fa-solid fa-circle-exclamation"></i> ${errors} ${t('errors_label')}</span>
+      <span class="stat stat-warning"><i class="fa-solid fa-triangle-exclamation"></i> ${warnings} ${t('warnings_label')}</span>
     </div>
   `
 
