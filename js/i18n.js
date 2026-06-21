@@ -22,6 +22,7 @@ const I18N = {
     compare_hint: '現行版の .bivr ファイルをドラッグ＆ドロップ、またはクリックして選択',
     file_clear: '×',
     // Modes
+    mode_placeholder: 'チェックモードを選択してください…',
     mode_label: 'チェックモード',
     mode_deploy_title: '本番デプロイ前の全体チェック',
     mode_deploy_desc: 'フローと IVR プロパティをまとめて検証します。',
@@ -144,6 +145,7 @@ const I18N = {
     compare_hint: 'Kéo thả hoặc nhấp để chọn file .bivr bản hiện hành',
     file_clear: '×',
     // Modes
+    mode_placeholder: 'Chọn chế độ kiểm tra…',
     mode_label: 'Chế độ kiểm tra',
     mode_deploy_title: 'Kiểm tra toàn bộ trước khi Deploy Master',
     mode_deploy_desc: 'Kiểm tra cả flow và IVR property cùng lúc.',

@@ -26,6 +26,12 @@ function applyLang(lang) {
     el.textContent = t(el.getAttribute('data-i18n'))
   })
   document.querySelector('#langBtn span').textContent = t('lang_toggle')
+  // Update select option text
+  document.querySelectorAll('#modeSelect option[data-i18n]').forEach(opt => {
+    opt.textContent = t(opt.dataset.i18n)
+  })
+  // Refresh description banner
+  if (state.mode) applyMode(state.mode)
   // Refresh detected badges + report (proper nouns stay untranslated — they live in <code>)
   refreshDetectedBadges()
   if (state.lastRun) rerenderReport()
@@ -125,12 +131,32 @@ function renderDetectedIfAny(badgeId, parsedKey) {
 }
 
 // ── Mode UI ─────────────────────────────────────────────────────────────────--
+const MODE_DESC_ICONS = {
+  deploy:   'fa-rocket',
+  flow:     'fa-diagram-project',
+  property: 'fa-sliders',
+  compare:  'fa-code-compare',
+}
+
 function applyMode(mode) {
+  if (!mode) return
   state.mode = mode
+
+  // Show detail area
+  document.getElementById('modeDetail').hidden = false
+
+  // Description banner
+  const banner = document.getElementById('modeDescBanner')
+  banner.hidden = false
+  const ico = MODE_DESC_ICONS[mode] || 'fa-list-check'
+  banner.innerHTML = `<i class="fa-solid ${ico}"></i> <span>${t('mode_' + mode + '_desc')}</span>`
+
+  // Upload layout
   const isCompare = mode === 'compare'
   document.getElementById('singleUpload').hidden = isCompare
   document.getElementById('compareUpload').hidden = !isCompare
 
+  // Check options
   const allowed = MODE_CHECKS[mode]
   document.querySelectorAll('#checksGrid .check-label').forEach(label => {
     const key = label.dataset.check
@@ -138,7 +164,7 @@ function applyMode(mode) {
     label.hidden = !visible
     const cb = label.querySelector('.check-input')
     cb.disabled = !visible
-    if (visible) cb.checked = true // default: select all
+    if (visible) cb.checked = true
   })
 }
 
@@ -304,9 +330,9 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   })
 
-  // Mode switch
-  document.querySelectorAll('input[name="mode"]').forEach(radio => {
-    radio.addEventListener('change', () => applyMode(radio.value))
+  // Mode dropdown
+  document.getElementById('modeSelect').addEventListener('change', e => {
+    applyMode(e.target.value)
   })
 
   // Check-all toggle
@@ -323,6 +349,5 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('runBtn').addEventListener('click', runChecks)
   document.getElementById('downloadBtn').addEventListener('click', downloadReport)
 
-  applyMode('deploy')
   applyLang('ja')
 })

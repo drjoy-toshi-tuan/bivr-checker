@@ -47,7 +47,7 @@
     </div>
   </section>
 
-  <!-- ── Step 1: Mode ──────────────────────────────────────────────────────── -->
+  <!-- ── Step 1: Mode + Upload + Checks (all in one card) ──────────────────── -->
   <section class="card">
     <div class="step-header">
       <span class="step-badge">01</span>
@@ -56,154 +56,126 @@
       </div>
     </div>
 
-    <div class="mode-grid" id="modeGrid">
-      <label class="mode-card">
-        <input type="radio" name="mode" value="deploy" checked>
-        <span class="mode-body">
-          <span class="mode-ico"><i class="fa-solid fa-rocket"></i></span>
-          <span class="mode-title" data-i18n="mode_deploy_title">本番デプロイ前の全体チェック</span>
-          <span class="mode-desc" data-i18n="mode_deploy_desc"></span>
-        </span>
-      </label>
-      <label class="mode-card">
-        <input type="radio" name="mode" value="flow">
-        <span class="mode-body">
-          <span class="mode-ico"><i class="fa-solid fa-diagram-project"></i></span>
-          <span class="mode-title" data-i18n="mode_flow_title">フローのみチェック</span>
-          <span class="mode-desc" data-i18n="mode_flow_desc"></span>
-        </span>
-      </label>
-      <label class="mode-card">
-        <input type="radio" name="mode" value="property">
-        <span class="mode-body">
-          <span class="mode-ico"><i class="fa-solid fa-sliders"></i></span>
-          <span class="mode-title" data-i18n="mode_property_title">IVR プロパティのみチェック</span>
-          <span class="mode-desc" data-i18n="mode_property_desc"></span>
-        </span>
-      </label>
-      <label class="mode-card">
-        <input type="radio" name="mode" value="compare">
-        <span class="mode-body">
-          <span class="mode-ico"><i class="fa-solid fa-code-compare"></i></span>
-          <span class="mode-title" data-i18n="mode_compare_title">2 環境間のフロー比較</span>
-          <span class="mode-desc" data-i18n="mode_compare_desc"></span>
-        </span>
-      </label>
+    <!-- Mode dropdown -->
+    <div class="mode-select-wrap">
+      <div class="mode-select-inner">
+        <i class="fa-solid fa-chevron-down mode-chevron"></i>
+        <select id="modeSelect" class="mode-select">
+          <option value="" disabled selected data-i18n="mode_placeholder">チェックモードを選択してください…</option>
+          <option value="deploy"  data-i18n="mode_deploy_title">本番デプロイ前の全体チェック</option>
+          <option value="flow"    data-i18n="mode_flow_title">フローのみチェック</option>
+          <option value="property" data-i18n="mode_property_title">IVR プロパティのみチェック</option>
+          <option value="compare" data-i18n="mode_compare_title">2 環境間のフロー比較</option>
+        </select>
+      </div>
+      <!-- Description shown after selection -->
+      <div class="mode-desc-banner" id="modeDescBanner" hidden></div>
+    </div>
+
+    <!-- Detail area: shown only after mode is selected -->
+    <div id="modeDetail" hidden>
+      <div class="card-divider"></div>
+
+      <!-- Upload zone(s) -->
+      <div class="section-sub-label"><i class="fa-solid fa-cloud-arrow-up"></i> <span data-i18n="step2_title">ファイルのアップロード</span></div>
+
+      <div class="upload-grid single-up" id="singleUpload">
+        <div class="upload-zone" id="zipZone">
+          <span class="upload-icon-box req"><i class="fa-solid fa-file-zipper"></i></span>
+          <span class="upload-label" data-i18n="zip_label">エクスポート zip（必須）</span>
+          <span class="upload-hint" data-i18n="zip_hint_set"></span>
+          <span class="upload-filename" id="zipName"></span>
+          <button class="file-clear" data-zone="zipZone" data-input="zipInput" data-key="zipFile"><i class="fa-solid fa-xmark"></i></button>
+          <input type="file" id="zipInput" accept=".zip" hidden>
+          <div class="detected" id="zipDetected" hidden></div>
+        </div>
+      </div>
+
+      <div class="upload-grid compare-up" id="compareUpload" hidden>
+        <div class="upload-zone" id="demoZone">
+          <span class="upload-icon-box"><i class="fa-solid fa-flask"></i></span>
+          <span class="upload-label" data-i18n="zip_demo_label">デモ環境の zip</span>
+          <span class="upload-hint" data-i18n="zip_hint_set"></span>
+          <span class="upload-filename" id="demoName"></span>
+          <button class="file-clear" data-zone="demoZone" data-input="demoInput" data-key="demoZipFile"><i class="fa-solid fa-xmark"></i></button>
+          <input type="file" id="demoInput" accept=".zip" hidden>
+          <div class="detected" id="demoDetected" hidden></div>
+        </div>
+        <div class="upload-zone" id="masterZone">
+          <span class="upload-icon-box"><i class="fa-solid fa-server"></i></span>
+          <span class="upload-label" data-i18n="zip_master_label">本番環境の zip</span>
+          <span class="upload-hint" data-i18n="zip_hint_set"></span>
+          <span class="upload-filename" id="masterName"></span>
+          <button class="file-clear" data-zone="masterZone" data-input="masterInput" data-key="masterZipFile"><i class="fa-solid fa-xmark"></i></button>
+          <input type="file" id="masterInput" accept=".zip" hidden>
+          <div class="detected" id="masterDetected" hidden></div>
+        </div>
+      </div>
+
+      <div class="card-divider"></div>
+
+      <!-- Check options -->
+      <div class="section-sub-label"><i class="fa-solid fa-sliders"></i> <span data-i18n="step3_title">チェック項目</span></div>
+
+      <div class="config-group">
+        <div class="checks-header">
+          <label class="group-label"><i class="fa-solid fa-list-check"></i> <span data-i18n="checks_label">チェック項目</span></label>
+          <button class="check-all-btn" id="checkAllBtn" data-i18n="check_all">すべて選択</button>
+        </div>
+        <div class="checks-grid" id="checksGrid">
+          <label class="check-label" data-check="api" data-scope="property">
+            <input type="checkbox" class="check-input" value="api" checked>
+            <span class="check-custom"></span>
+            <span class="opt-text">
+              <i class="fa-solid fa-link opt-ico"></i>
+              <span class="check-label-text" data-i18n="check_api">API URL チェック</span>
+              <span class="scope-tag scope-property"><i class="fa-solid fa-sliders"></i> <span data-i18n="scope_property">プロパティ</span></span>
+            </span>
+          </label>
+          <label class="check-label" data-check="phone" data-scope="flow">
+            <input type="checkbox" class="check-input" value="phone" checked>
+            <span class="check-custom"></span>
+            <span class="opt-text">
+              <i class="fa-solid fa-phone-volume opt-ico"></i>
+              <span class="check-label-text" data-i18n="check_phone">電話番号チェック</span>
+              <span class="scope-tag scope-flow"><i class="fa-solid fa-diagram-project"></i> <span data-i18n="scope_flow">フロー</span></span>
+            </span>
+          </label>
+          <label class="check-label" data-check="jump" data-scope="flow">
+            <input type="checkbox" class="check-input" value="jump" checked>
+            <span class="check-custom"></span>
+            <span class="opt-text">
+              <i class="fa-solid fa-arrow-right-arrow-left opt-ico"></i>
+              <span class="check-label-text" data-i18n="check_jump">Jump to Flow チェック</span>
+              <span class="scope-tag scope-flow"><i class="fa-solid fa-diagram-project"></i> <span data-i18n="scope_flow">フロー</span></span>
+            </span>
+          </label>
+          <label class="check-label" data-check="diff" data-scope="flow">
+            <input type="checkbox" class="check-input" value="diff" checked>
+            <span class="check-custom"></span>
+            <span class="opt-text">
+              <i class="fa-solid fa-code-compare opt-ico"></i>
+              <span class="check-label-text" data-i18n="check_diff">差分チェック</span>
+              <span class="scope-tag scope-flow"><i class="fa-solid fa-diagram-project"></i> <span data-i18n="scope_flow">フロー</span></span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="run-row">
+        <div class="error-msg" id="errorMsg" style="display:none"></div>
+        <button class="btn-primary" id="runBtn">
+          <i class="fa-solid fa-play btn-ico" id="runIcon"></i>
+          <span data-i18n="run_btn">チェック実行</span>
+        </button>
+      </div>
     </div>
   </section>
 
-  <!-- ── Step 2: Upload ────────────────────────────────────────────────────── -->
-  <section class="card">
-    <div class="step-header">
-      <span class="step-badge">02</span>
-      <div class="step-titles">
-        <h2 class="step-title"><i class="fa-solid fa-cloud-arrow-up step-ico"></i> <span data-i18n="step2_title">ファイルのアップロード</span></h2>
-      </div>
-    </div>
-
-    <!-- Single zip (deploy / flow / property) -->
-    <div class="upload-grid single-up" id="singleUpload">
-      <div class="upload-zone" id="zipZone">
-        <span class="upload-icon-box req"><i class="fa-solid fa-file-zipper"></i></span>
-        <span class="upload-label" data-i18n="zip_label">エクスポート zip（必須）</span>
-        <span class="upload-hint" data-i18n="zip_hint_set"></span>
-        <span class="upload-filename" id="zipName"></span>
-        <button class="file-clear" data-zone="zipZone" data-input="zipInput" data-key="zipFile"><i class="fa-solid fa-xmark"></i></button>
-        <input type="file" id="zipInput" accept=".zip" hidden>
-        <div class="detected" id="zipDetected" hidden></div>
-      </div>
-    </div>
-
-    <!-- Two zips (compare) -->
-    <div class="upload-grid compare-up" id="compareUpload" hidden>
-      <div class="upload-zone" id="demoZone">
-        <span class="upload-icon-box"><i class="fa-solid fa-flask"></i></span>
-        <span class="upload-label" data-i18n="zip_demo_label">デモ環境の zip</span>
-        <span class="upload-hint" data-i18n="zip_hint_set"></span>
-        <span class="upload-filename" id="demoName"></span>
-        <button class="file-clear" data-zone="demoZone" data-input="demoInput" data-key="demoZipFile"><i class="fa-solid fa-xmark"></i></button>
-        <input type="file" id="demoInput" accept=".zip" hidden>
-        <div class="detected" id="demoDetected" hidden></div>
-      </div>
-      <div class="upload-zone" id="masterZone">
-        <span class="upload-icon-box"><i class="fa-solid fa-server"></i></span>
-        <span class="upload-label" data-i18n="zip_master_label">本番環境の zip</span>
-        <span class="upload-hint" data-i18n="zip_hint_set"></span>
-        <span class="upload-filename" id="masterName"></span>
-        <button class="file-clear" data-zone="masterZone" data-input="masterInput" data-key="masterZipFile"><i class="fa-solid fa-xmark"></i></button>
-        <input type="file" id="masterInput" accept=".zip" hidden>
-        <div class="detected" id="masterDetected" hidden></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── Step 3: Check options ─────────────────────────────────────────────── -->
-  <section class="card">
-    <div class="step-header">
-      <span class="step-badge">03</span>
-      <div class="step-titles">
-        <h2 class="step-title"><i class="fa-solid fa-sliders step-ico"></i> <span data-i18n="step3_title">チェック項目</span></h2>
-      </div>
-    </div>
-
-    <div class="config-group">
-      <div class="checks-header">
-        <label class="group-label"><i class="fa-solid fa-list-check"></i> <span data-i18n="checks_label">チェック項目</span></label>
-        <button class="check-all-btn" id="checkAllBtn" data-i18n="check_all">すべて選択</button>
-      </div>
-      <div class="checks-grid" id="checksGrid">
-        <label class="check-label" data-check="api" data-scope="property">
-          <input type="checkbox" class="check-input" value="api" checked>
-          <span class="check-custom"></span>
-          <span class="opt-text">
-            <i class="fa-solid fa-link opt-ico"></i>
-            <span class="check-label-text" data-i18n="check_api">API URL チェック</span>
-            <span class="scope-tag scope-property"><i class="fa-solid fa-sliders"></i> <span data-i18n="scope_property">プロパティ</span></span>
-          </span>
-        </label>
-        <label class="check-label" data-check="phone" data-scope="flow">
-          <input type="checkbox" class="check-input" value="phone" checked>
-          <span class="check-custom"></span>
-          <span class="opt-text">
-            <i class="fa-solid fa-phone-volume opt-ico"></i>
-            <span class="check-label-text" data-i18n="check_phone">電話番号チェック</span>
-            <span class="scope-tag scope-flow"><i class="fa-solid fa-diagram-project"></i> <span data-i18n="scope_flow">フロー</span></span>
-          </span>
-        </label>
-        <label class="check-label" data-check="jump" data-scope="flow">
-          <input type="checkbox" class="check-input" value="jump" checked>
-          <span class="check-custom"></span>
-          <span class="opt-text">
-            <i class="fa-solid fa-arrow-right-arrow-left opt-ico"></i>
-            <span class="check-label-text" data-i18n="check_jump">Jump to Flow チェック</span>
-            <span class="scope-tag scope-flow"><i class="fa-solid fa-diagram-project"></i> <span data-i18n="scope_flow">フロー</span></span>
-          </span>
-        </label>
-        <label class="check-label" data-check="diff" data-scope="flow">
-          <input type="checkbox" class="check-input" value="diff" checked>
-          <span class="check-custom"></span>
-          <span class="opt-text">
-            <i class="fa-solid fa-code-compare opt-ico"></i>
-            <span class="check-label-text" data-i18n="check_diff">差分チェック</span>
-            <span class="scope-tag scope-flow"><i class="fa-solid fa-diagram-project"></i> <span data-i18n="scope_flow">フロー</span></span>
-          </span>
-        </label>
-      </div>
-    </div>
-
-    <div class="run-row">
-      <div class="error-msg" id="errorMsg" style="display:none"></div>
-      <button class="btn-primary" id="runBtn">
-        <i class="fa-solid fa-play btn-ico" id="runIcon"></i>
-        <span data-i18n="run_btn">チェック実行</span>
-      </button>
-    </div>
-  </section>
-
-  <!-- ── Step 4: Results ───────────────────────────────────────────────────── -->
+  <!-- ── Step 2: Results ───────────────────────────────────────────────────── -->
   <section class="card" id="step3" hidden>
     <div class="step-header">
-      <span class="step-badge">04</span>
+      <span class="step-badge">02</span>
       <div class="step-titles">
         <h2 class="step-title"><i class="fa-solid fa-clipboard-check step-ico"></i> <span data-i18n="step4_title">結果</span></h2>
       </div>
