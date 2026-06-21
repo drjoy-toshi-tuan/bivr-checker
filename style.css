@@ -1,5 +1,8 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Ensure the hidden attribute always wins over display rules (grid/flex) */
+[hidden] { display: none !important; }
+
 :root {
   /* Liquid-glass accent (matches Brekeke export panel) */
   --orange: #ff7a1a;

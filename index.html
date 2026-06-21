@@ -56,20 +56,40 @@
       </div>
     </div>
 
-    <!-- Mode dropdown -->
-    <div class="mode-select-wrap">
-      <div class="mode-select-inner">
-        <i class="fa-solid fa-chevron-down mode-chevron"></i>
-        <select id="modeSelect" class="mode-select">
-          <option value="" disabled selected data-i18n="mode_placeholder">チェックモードを選択してください…</option>
-          <option value="deploy"  data-i18n="mode_deploy_title">本番デプロイ前の全体チェック</option>
-          <option value="flow"    data-i18n="mode_flow_title">フローのみチェック</option>
-          <option value="property" data-i18n="mode_property_title">IVR プロパティのみチェック</option>
-          <option value="compare" data-i18n="mode_compare_title">2 環境間のフロー比較</option>
-        </select>
-      </div>
-      <!-- Description shown after selection -->
-      <div class="mode-desc-banner" id="modeDescBanner" hidden></div>
+    <!-- Mode cards -->
+    <div class="mode-grid" id="modeGrid">
+      <label class="mode-card">
+        <input type="radio" name="mode" value="deploy">
+        <span class="mode-body">
+          <span class="mode-ico"><i class="fa-solid fa-rocket"></i></span>
+          <span class="mode-title" data-i18n="mode_deploy_title">本番デプロイ前の全体チェック</span>
+          <span class="mode-desc" data-i18n="mode_deploy_desc"></span>
+        </span>
+      </label>
+      <label class="mode-card">
+        <input type="radio" name="mode" value="flow">
+        <span class="mode-body">
+          <span class="mode-ico"><i class="fa-solid fa-diagram-project"></i></span>
+          <span class="mode-title" data-i18n="mode_flow_title">フローのみチェック</span>
+          <span class="mode-desc" data-i18n="mode_flow_desc"></span>
+        </span>
+      </label>
+      <label class="mode-card">
+        <input type="radio" name="mode" value="property">
+        <span class="mode-body">
+          <span class="mode-ico"><i class="fa-solid fa-sliders"></i></span>
+          <span class="mode-title" data-i18n="mode_property_title">IVR プロパティのみチェック</span>
+          <span class="mode-desc" data-i18n="mode_property_desc"></span>
+        </span>
+      </label>
+      <label class="mode-card">
+        <input type="radio" name="mode" value="compare">
+        <span class="mode-body">
+          <span class="mode-ico"><i class="fa-solid fa-code-compare"></i></span>
+          <span class="mode-title" data-i18n="mode_compare_title">2 環境間のフロー比較</span>
+          <span class="mode-desc" data-i18n="mode_compare_desc"></span>
+        </span>
+      </label>
     </div>
 
     <!-- Detail area: shown only after mode is selected -->

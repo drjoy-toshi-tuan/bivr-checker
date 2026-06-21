@@ -1,7 +1,7 @@
 // ── State ─────────────────────────────────────────────────────────────────────
 const state = {
   lang: 'ja',
-  mode: 'deploy',
+  mode: null,
   zipFile: null,         // single-zip modes
   demoZipFile: null,     // compare
   masterZipFile: null,   // compare
@@ -26,12 +26,6 @@ function applyLang(lang) {
     el.textContent = t(el.getAttribute('data-i18n'))
   })
   document.querySelector('#langBtn span').textContent = t('lang_toggle')
-  // Update select option text
-  document.querySelectorAll('#modeSelect option[data-i18n]').forEach(opt => {
-    opt.textContent = t(opt.dataset.i18n)
-  })
-  // Refresh description banner
-  if (state.mode) applyMode(state.mode)
   // Refresh detected badges + report (proper nouns stay untranslated — they live in <code>)
   refreshDetectedBadges()
   if (state.lastRun) rerenderReport()
@@ -131,32 +125,19 @@ function renderDetectedIfAny(badgeId, parsedKey) {
 }
 
 // ── Mode UI ─────────────────────────────────────────────────────────────────--
-const MODE_DESC_ICONS = {
-  deploy:   'fa-rocket',
-  flow:     'fa-diagram-project',
-  property: 'fa-sliders',
-  compare:  'fa-code-compare',
-}
-
 function applyMode(mode) {
   if (!mode) return
   state.mode = mode
 
-  // Show detail area
+  // Reveal detail area (upload + checks + run)
   document.getElementById('modeDetail').hidden = false
 
-  // Description banner
-  const banner = document.getElementById('modeDescBanner')
-  banner.hidden = false
-  const ico = MODE_DESC_ICONS[mode] || 'fa-list-check'
-  banner.innerHTML = `<i class="fa-solid ${ico}"></i> <span>${t('mode_' + mode + '_desc')}</span>`
-
-  // Upload layout
+  // Upload layout: one zip, or two zips for compare
   const isCompare = mode === 'compare'
   document.getElementById('singleUpload').hidden = isCompare
   document.getElementById('compareUpload').hidden = !isCompare
 
-  // Check options
+  // Check options relevant to this mode (default all on)
   const allowed = MODE_CHECKS[mode]
   document.querySelectorAll('#checksGrid .check-label').forEach(label => {
     const key = label.dataset.check
@@ -166,6 +147,9 @@ function applyMode(mode) {
     cb.disabled = !visible
     if (visible) cb.checked = true
   })
+
+  // Scroll the newly revealed section into view
+  document.getElementById('modeDetail').scrollIntoView({ behavior: 'smooth', block: 'nearest' })
 }
 
 // ── Checks state ──────────────────────────────────────────────────────────────
@@ -330,9 +314,9 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   })
 
-  // Mode dropdown
-  document.getElementById('modeSelect').addEventListener('change', e => {
-    applyMode(e.target.value)
+  // Mode cards
+  document.querySelectorAll('input[name="mode"]').forEach(radio => {
+    radio.addEventListener('change', () => applyMode(radio.value))
   })
 
   // Check-all toggle
