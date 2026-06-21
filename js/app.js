@@ -157,6 +157,30 @@ function applyMode(mode) {
   document.getElementById('modeDetail').scrollIntoView({ behavior: 'smooth', block: 'nearest' })
 }
 
+// ── Collapsible cards ───────────────────────────────────────────────────────--
+function setCollapsed(target, collapsed) {
+  const body = document.getElementById(target)
+  const btn = document.querySelector(`.collapse-btn[data-target="${target}"]`)
+  if (!body || !btn) return
+  btn.setAttribute('aria-expanded', String(!collapsed))
+  if (collapsed) {
+    body.style.maxHeight = body.scrollHeight + 'px'
+    void body.offsetHeight // force reflow
+    body.classList.add('collapsed')
+  } else {
+    body.classList.remove('collapsed')
+    body.style.maxHeight = body.scrollHeight + 'px'
+    body.addEventListener('transitionend', function clear() {
+      body.style.maxHeight = ''
+      body.removeEventListener('transitionend', clear)
+    })
+  }
+}
+function toggleCollapsed(target) {
+  const body = document.getElementById(target)
+  setCollapsed(target, !body.classList.contains('collapsed'))
+}
+
 // ── Checks state ──────────────────────────────────────────────────────────────
 function getSelectedChecks() {
   return [...document.querySelectorAll('#checksGrid .check-input:checked:not(:disabled)')].map(cb => cb.value)
@@ -233,6 +257,9 @@ async function runChecks() {
     rerenderReport()
     const step3 = document.getElementById('step3')
     step3.hidden = false
+    // Auto-collapse the setting card, ensure results are expanded
+    setCollapsed('settingBody', true)
+    setCollapsed('resultBody', false)
     step3.scrollIntoView({ behavior: 'smooth', block: 'start' })
   } catch (err) {
     showError('Error: ' + err.message)
@@ -337,6 +364,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('runBtn').addEventListener('click', runChecks)
   document.getElementById('downloadBtn').addEventListener('click', downloadReport)
+
+  // Collapse / expand toggles
+  document.querySelectorAll('.collapse-btn').forEach(btn => {
+    btn.addEventListener('click', () => toggleCollapsed(btn.dataset.target))
+  })
 
   applyLang('ja')
 })

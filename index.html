@@ -54,8 +54,12 @@
       <div class="step-titles">
         <h2 class="step-title"><i class="fa-solid fa-list-check step-ico"></i> <span data-i18n="step1_title">チェックモードの選択</span></h2>
       </div>
+      <button class="collapse-btn" data-target="settingBody" aria-expanded="true" title="">
+        <i class="fa-solid fa-chevron-up"></i>
+      </button>
     </div>
 
+    <div class="card-body" id="settingBody">
     <!-- Mode cards -->
     <div class="mode-grid" id="modeGrid">
       <label class="mode-card">
@@ -202,6 +206,7 @@
         </button>
       </div>
     </div>
+    </div>
   </section>
 
   <!-- ── Step 2: Results ───────────────────────────────────────────────────── -->
@@ -211,8 +216,12 @@
       <div class="step-titles">
         <h2 class="step-title"><i class="fa-solid fa-clipboard-check step-ico"></i> <span data-i18n="step4_title">結果</span></h2>
       </div>
+      <button class="collapse-btn" data-target="resultBody" aria-expanded="true" title="">
+        <i class="fa-solid fa-chevron-up"></i>
+      </button>
     </div>
 
+    <div class="card-body" id="resultBody">
     <div class="result-summary" id="resultSummary"></div>
 
     <div class="result-actions">
@@ -227,6 +236,7 @@
       <span data-i18n="preview_label">レポートプレビュー</span>
     </div>
     <div class="md-preview markdown-body" id="resultPreview"></div>
+    </div>
   </section>
 
 </main>
