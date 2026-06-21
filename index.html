@@ -56,40 +56,20 @@
       </div>
     </div>
 
-    <!-- Mode cards -->
-    <div class="mode-grid" id="modeGrid">
-      <label class="mode-card">
-        <input type="radio" name="mode" value="deploy">
-        <span class="mode-body">
-          <span class="mode-ico"><i class="fa-solid fa-rocket"></i></span>
-          <span class="mode-title" data-i18n="mode_deploy_title">本番デプロイ前の全体チェック</span>
-          <span class="mode-desc" data-i18n="mode_deploy_desc"></span>
-        </span>
-      </label>
-      <label class="mode-card">
-        <input type="radio" name="mode" value="flow">
-        <span class="mode-body">
-          <span class="mode-ico"><i class="fa-solid fa-diagram-project"></i></span>
-          <span class="mode-title" data-i18n="mode_flow_title">フローのみチェック</span>
-          <span class="mode-desc" data-i18n="mode_flow_desc"></span>
-        </span>
-      </label>
-      <label class="mode-card">
-        <input type="radio" name="mode" value="property">
-        <span class="mode-body">
-          <span class="mode-ico"><i class="fa-solid fa-sliders"></i></span>
-          <span class="mode-title" data-i18n="mode_property_title">IVR プロパティのみチェック</span>
-          <span class="mode-desc" data-i18n="mode_property_desc"></span>
-        </span>
-      </label>
-      <label class="mode-card">
-        <input type="radio" name="mode" value="compare">
-        <span class="mode-body">
-          <span class="mode-ico"><i class="fa-solid fa-code-compare"></i></span>
-          <span class="mode-title" data-i18n="mode_compare_title">2 環境間のフロー比較</span>
-          <span class="mode-desc" data-i18n="mode_compare_desc"></span>
-        </span>
-      </label>
+    <!-- Mode dropdown -->
+    <div class="mode-select-wrap">
+      <div class="mode-select-inner">
+        <span class="mode-select-icon" id="modeSelectIcon"><i class="fa-solid fa-list-check"></i></span>
+        <select class="mode-select" id="modeSelect">
+          <option value="" data-i18n="mode_placeholder">-- チェックモードを選択 --</option>
+          <option value="deploy" data-i18n="mode_deploy_title">本番デプロイ前の全体チェック</option>
+          <option value="flow" data-i18n="mode_flow_title">フローのみチェック</option>
+          <option value="property" data-i18n="mode_property_title">IVR プロパティのみチェック</option>
+          <option value="compare" data-i18n="mode_compare_title">2 環境間のフロー比較</option>
+        </select>
+        <span class="mode-select-arrow"><i class="fa-solid fa-chevron-down"></i></span>
+      </div>
+      <p class="mode-desc-banner" id="modeDescBanner" hidden></p>
     </div>
 
     <!-- Detail area: shown only after mode is selected -->
@@ -133,9 +113,6 @@
       </div>
 
       <div class="card-divider"></div>
-
-      <!-- Check options -->
-      <div class="section-sub-label"><i class="fa-solid fa-sliders"></i> <span data-i18n="step3_title">チェック項目</span></div>
 
       <div class="config-group">
         <div class="checks-header">
@@ -184,7 +161,7 @@
 
       <div class="run-row">
         <div class="error-msg" id="errorMsg" style="display:none"></div>
-        <button class="btn-primary" id="runBtn">
+        <button class="btn-primary btn-run-full" id="runBtn">
           <i class="fa-solid fa-play btn-ico" id="runIcon"></i>
           <span data-i18n="run_btn">チェック実行</span>
         </button>

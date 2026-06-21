@@ -26,7 +26,11 @@ function applyLang(lang) {
     el.textContent = t(el.getAttribute('data-i18n'))
   })
   document.querySelector('#langBtn span').textContent = t('lang_toggle')
-  // Refresh detected badges + report (proper nouns stay untranslated — they live in <code>)
+  // Refresh mode banner text
+  if (state.mode) {
+    const banner = document.getElementById('modeDescBanner')
+    if (banner && !banner.hidden) banner.textContent = t(MODE_DESC_KEYS[state.mode] || '')
+  }
   refreshDetectedBadges()
   if (state.lastRun) rerenderReport()
 }
@@ -125,9 +129,30 @@ function renderDetectedIfAny(badgeId, parsedKey) {
 }
 
 // ── Mode UI ─────────────────────────────────────────────────────────────────--
+const MODE_ICONS = {
+  deploy: 'fa-rocket', flow: 'fa-diagram-project',
+  property: 'fa-sliders', compare: 'fa-code-compare',
+}
+const MODE_DESC_KEYS = {
+  deploy: 'mode_deploy_desc', flow: 'mode_flow_desc',
+  property: 'mode_property_desc', compare: 'mode_compare_desc',
+}
+
 function applyMode(mode) {
   if (!mode) return
   state.mode = mode
+
+  // Update dropdown icon
+  const iconEl = document.getElementById('modeSelectIcon')
+  if (iconEl) iconEl.innerHTML = `<i class="fa-solid ${MODE_ICONS[mode] || 'fa-list-check'}"></i>`
+
+  // Show description banner
+  const banner = document.getElementById('modeDescBanner')
+  if (banner) {
+    const key = MODE_DESC_KEYS[mode]
+    banner.hidden = false
+    banner.textContent = key ? t(key) : ''
+  }
 
   // Reveal detail area (upload + checks + run)
   document.getElementById('modeDetail').hidden = false
@@ -314,9 +339,9 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   })
 
-  // Mode cards
-  document.querySelectorAll('input[name="mode"]').forEach(radio => {
-    radio.addEventListener('change', () => applyMode(radio.value))
+  // Mode dropdown
+  document.getElementById('modeSelect').addEventListener('change', e => {
+    applyMode(e.target.value)
   })
 
   // Check-all toggle
