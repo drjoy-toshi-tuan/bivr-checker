@@ -147,6 +147,12 @@ function applyMode(mode) {
     if (visible) cb.checked = true
   })
 
+  // Hide a category column when it has no visible checks
+  document.querySelectorAll('#checksGrid .check-cat').forEach(cat => {
+    const anyVisible = [...cat.querySelectorAll('.check-label')].some(l => !l.hidden)
+    cat.hidden = !anyVisible
+  })
+
   // Scroll the newly revealed section into view
   document.getElementById('modeDetail').scrollIntoView({ behavior: 'smooth', block: 'nearest' })
 }

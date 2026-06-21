@@ -103,42 +103,56 @@
           <button class="check-all-btn" id="checkAllBtn" data-i18n="check_all">すべて選択</button>
         </div>
         <div class="checks-grid" id="checksGrid">
-          <label class="check-label" data-check="api" data-scope="property">
-            <input type="checkbox" class="check-input" value="api" checked>
-            <span class="check-custom"></span>
-            <span class="opt-text">
-              <i class="fa-solid fa-link opt-ico"></i>
-              <span class="check-label-text" data-i18n="check_api">API URL チェック</span>
-              <span class="scope-tag scope-property"><i class="fa-solid fa-sliders"></i> <span data-i18n="scope_property">プロパティ</span></span>
-            </span>
-          </label>
-          <label class="check-label" data-check="phone" data-scope="flow">
-            <input type="checkbox" class="check-input" value="phone" checked>
-            <span class="check-custom"></span>
-            <span class="opt-text">
-              <i class="fa-solid fa-phone-volume opt-ico"></i>
-              <span class="check-label-text" data-i18n="check_phone">電話番号チェック</span>
-              <span class="scope-tag scope-flow"><i class="fa-solid fa-diagram-project"></i> <span data-i18n="scope_flow">フロー</span></span>
-            </span>
-          </label>
-          <label class="check-label" data-check="jump" data-scope="flow">
-            <input type="checkbox" class="check-input" value="jump" checked>
-            <span class="check-custom"></span>
-            <span class="opt-text">
-              <i class="fa-solid fa-arrow-right-arrow-left opt-ico"></i>
-              <span class="check-label-text" data-i18n="check_jump">Jump to Flow チェック</span>
-              <span class="scope-tag scope-flow"><i class="fa-solid fa-diagram-project"></i> <span data-i18n="scope_flow">フロー</span></span>
-            </span>
-          </label>
-          <label class="check-label" data-check="diff" data-scope="flow">
-            <input type="checkbox" class="check-input" value="diff" checked>
-            <span class="check-custom"></span>
-            <span class="opt-text">
-              <i class="fa-solid fa-code-compare opt-ico"></i>
-              <span class="check-label-text" data-i18n="check_diff">差分チェック</span>
-              <span class="scope-tag scope-flow"><i class="fa-solid fa-diagram-project"></i> <span data-i18n="scope_flow">フロー</span></span>
-            </span>
-          </label>
+          <!-- Flow category -->
+          <div class="check-cat" data-cat="flow">
+            <div class="check-cat-head check-cat-flow">
+              <i class="fa-solid fa-diagram-project"></i>
+              <span data-i18n="scope_flow">フロー</span>
+            </div>
+            <div class="check-cat-body">
+              <label class="check-label" data-check="phone" data-scope="flow">
+                <input type="checkbox" class="check-input" value="phone" checked>
+                <span class="check-custom"></span>
+                <span class="opt-text">
+                  <i class="fa-solid fa-phone-volume opt-ico"></i>
+                  <span class="check-label-text" data-i18n="check_phone">電話番号チェック</span>
+                </span>
+              </label>
+              <label class="check-label" data-check="jump" data-scope="flow">
+                <input type="checkbox" class="check-input" value="jump" checked>
+                <span class="check-custom"></span>
+                <span class="opt-text">
+                  <i class="fa-solid fa-arrow-right-arrow-left opt-ico"></i>
+                  <span class="check-label-text" data-i18n="check_jump">Jump to Flow チェック</span>
+                </span>
+              </label>
+              <label class="check-label" data-check="diff" data-scope="flow">
+                <input type="checkbox" class="check-input" value="diff" checked>
+                <span class="check-custom"></span>
+                <span class="opt-text">
+                  <i class="fa-solid fa-code-compare opt-ico"></i>
+                  <span class="check-label-text" data-i18n="check_diff">差分チェック</span>
+                </span>
+              </label>
+            </div>
+          </div>
+          <!-- Property category -->
+          <div class="check-cat" data-cat="property">
+            <div class="check-cat-head check-cat-property">
+              <i class="fa-solid fa-sliders"></i>
+              <span data-i18n="scope_property">プロパティ</span>
+            </div>
+            <div class="check-cat-body">
+              <label class="check-label" data-check="api" data-scope="property">
+                <input type="checkbox" class="check-input" value="api" checked>
+                <span class="check-custom"></span>
+                <span class="opt-text">
+                  <i class="fa-solid fa-link opt-ico"></i>
+                  <span class="check-label-text" data-i18n="check_api">API URL チェック</span>
+                </span>
+              </label>
+            </div>
+          </div>
         </div>
       </div>
 
