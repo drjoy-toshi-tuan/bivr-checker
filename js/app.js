@@ -190,7 +190,7 @@ function getSelectedChecks() {
 function showError(msg) {
   const el = document.getElementById('errorMsg')
   el.textContent = msg
-  el.style.display = 'block'
+  el.style.display = 'flex'
   setTimeout(() => { el.style.display = 'none' }, 5000)
 }
 
