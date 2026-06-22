@@ -163,15 +163,78 @@ function envLabel(env) {
   return _t('env_unknown')
 }
 
+// ── Generic section (các check hỗn hợp theo flow) ──────────────────────────────
+function _issueDetail(i) {
+  const parts = []
+  if (i.object) parts.push(`object: \`<%${i.object}%>\``)
+  if (i.ref) parts.push(`${_t('lbl_value')}: \`${i.ref}\``)
+  if (i.node) parts.push(`nodeName: \`${i.node}\``)
+  if (i.slot) parts.push(`${_t('lbl_slot')}: \`${i.slot}\``)
+  if (i.field && i.type !== 'prop_prompt_no_module') parts.push(`field: \`${i.field}\``)
+  if (i.condition) parts.push(`regex: \`${i.condition}\``)
+  if (i.value) {
+    const v = i.value.length <= 80 ? i.value : i.value.slice(0, 80) + '…'
+    parts.push(`${_t('lbl_value')}: \`${v}\``)
+  }
+  return parts.length ? ' — ' + parts.join(' · ') : ''
+}
+
+function _renderGenericSection(title, issues, okMsg) {
+  const lines = [`## ${title}`, '']
+  if (!issues.length) {
+    lines.push(`🟢 ${okMsg}`, '')
+    return lines
+  }
+  const errors = issues.filter(i => i.severity === 'ERROR').length
+  const warnings = issues.filter(i => i.severity === 'WARNING').length
+  lines.push(`**${_t('gen_total')}:** 🔴 ${errors} ${_t('errors_label')} · 🟡 ${warnings} ${_t('warnings_label')}`, '')
+
+  const byFlow = {}
+  const noFlow = []
+  for (const i of issues) {
+    if (i.flow) (byFlow[i.flow] = byFlow[i.flow] || []).push(i)
+    else noFlow.push(i)
+  }
+
+  if (noFlow.length) {
+    lines.push(`### ${_t('sec_ivr_property')}`, '')
+    for (const i of noFlow) {
+      const e = SEV_EMOJI[i.severity] || '⚪'
+      const desc = _t('type_' + _typeKey(i.type))
+      const key = i.field ? `\`${i.field}\`` : ''
+      lines.push(`- ${e} **${desc}** ${key}${_issueDetail(i)}`)
+    }
+    lines.push('')
+  }
+
+  for (const [flow, flowIssues] of Object.entries(byFlow)) {
+    lines.push(`### Flow: \`${_fmtFlow(flow)}\``, '')
+    for (const i of flowIssues) {
+      const e = SEV_EMOJI[i.severity] || '⚪'
+      const desc = _t('type_' + _typeKey(i.type))
+      const mod = i.module ? `\`${i.module}\`` : ''
+      lines.push(`- ${e} ${mod} **${desc}**${_issueDetail(i)}`)
+    }
+    lines.push('')
+  }
+  return lines
+}
+
 function generateReport(opts) {
   const {
     bivrName, compareName = null, env, demoEnv = null, masterEnv = null,
     apiIssues = null, phoneIssues = null, jumpIssues = null, diffIssues = null,
+    promptIssues = null, ctxrouterIssues = null, regexIssues = null,
+    openaiIssues = null, reconfirmIssues = null, flagIssues = null,
   } = opts
   const envText = envLabel(env)
   const now = new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
 
-  const all = [...(apiIssues || []), ...(phoneIssues || []), ...(jumpIssues || []), ...(diffIssues || [])]
+  const all = [
+    ...(apiIssues || []), ...(phoneIssues || []), ...(jumpIssues || []), ...(diffIssues || []),
+    ...(promptIssues || []), ...(ctxrouterIssues || []), ...(regexIssues || []),
+    ...(openaiIssues || []), ...(reconfirmIssues || []), ...(flagIssues || []),
+  ]
   const totalErrors = all.filter(i => i.severity === 'ERROR').length
   const totalWarnings = all.filter(i => i.severity === 'WARNING').length
   const verdict = totalErrors === 0 ? '✅ PASS' : '❌ FAIL'
@@ -195,6 +258,12 @@ function generateReport(opts) {
   if (apiIssues !== null) sections.push(_renderApiSection(apiIssues, envText))
   if (phoneIssues !== null) sections.push(_renderPhoneSection(phoneIssues))
   if (jumpIssues !== null) sections.push(_renderJumpSection(jumpIssues))
+  if (promptIssues !== null) sections.push(_renderGenericSection(_t('sec_prompt'), promptIssues, _t('prompt_ok')))
+  if (ctxrouterIssues !== null) sections.push(_renderGenericSection(_t('sec_ctxrouter'), ctxrouterIssues, _t('ctxrouter_ok')))
+  if (regexIssues !== null) sections.push(_renderGenericSection(_t('sec_regex'), regexIssues, _t('regex_ok')))
+  if (openaiIssues !== null) sections.push(_renderGenericSection(_t('sec_openai'), openaiIssues, _t('openai_ok')))
+  if (reconfirmIssues !== null) sections.push(_renderGenericSection(_t('sec_reconfirm'), reconfirmIssues, _t('reconfirm_ok')))
+  if (flagIssues !== null) sections.push(_renderGenericSection(_t('sec_flag'), flagIssues, _t('flag_ok')))
   if (diffIssues !== null) sections.push(_renderDiffSection(diffIssues, compareName || '', envLabel(masterEnv), envLabel(demoEnv)))
 
   for (let i = 0; i < sections.length; i++) {

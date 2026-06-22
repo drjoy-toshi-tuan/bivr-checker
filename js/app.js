@@ -11,11 +11,14 @@ const state = {
 
 // Which checks belong to which mode
 const MODE_CHECKS = {
-  deploy: ['api', 'phone', 'jump'],
-  flow: ['phone', 'jump'],
+  deploy: ['api', 'phone', 'jump', 'prompt', 'ctxrouter', 'regex', 'openai', 'reconfirm', 'flag'],
+  flow: ['phone', 'jump', 'ctxrouter', 'regex', 'openai', 'reconfirm', 'flag'],
   property: ['api'],
   compare: ['diff'],
 }
+
+// Các check cần file IVR Properties (zip phải có ivr-property.md)
+const PROPS_CHECKS = new Set(['api', 'prompt'])
 
 // ── Lang ──────────────────────────────────────────────────────────────────────
 function applyLang(lang) {
@@ -248,11 +251,15 @@ async function runChecks() {
       state.parsed.zip = set
       const env = set.detail.env
       const wantApi = selected.includes('api')
+      const wantProps = selected.some(c => PROPS_CHECKS.has(c))
 
-      if (wantApi && !set.propsFiles.length) return showError(t('err_need_props'))
+      if (wantProps && !set.propsFiles.length) return showError(t('err_need_props'))
       if (wantApi && !env) return showError(t('err_no_env'))
 
       let apiIssues = null, phoneIssues = null, jumpIssues = null
+      let promptIssues = null, ctxrouterIssues = null, regexIssues = null
+      let openaiIssues = null, reconfirmIssues = null, flagIssues = null
+
       if (wantApi) {
         apiIssues = []
         for (const pf of set.propsFiles) {
@@ -260,14 +267,26 @@ async function runChecks() {
           apiIssues.push(...checkApiUrls(props, env))
         }
       }
+      if (selected.includes('prompt')) {
+        const mergedProps = {}
+        for (const pf of set.propsFiles) Object.assign(mergedProps, parseIvrProperties(pf.text))
+        promptIssues = checkPromptTts(set.flows, mergedProps)
+      }
       if (selected.includes('phone')) phoneIssues = checkPhoneNumbers(set.flows)
       if (selected.includes('jump')) jumpIssues = checkJumpToFlow(set.flows)
+      if (selected.includes('ctxrouter')) ctxrouterIssues = checkContextRouter(set.flows)
+      if (selected.includes('regex')) regexIssues = checkRegexSpace(set.flows)
+      if (selected.includes('openai')) openaiIssues = checkOpenaiModule(set.flows)
+      if (selected.includes('reconfirm')) reconfirmIssues = checkReconfirm(set.flows)
+      if (selected.includes('flag')) flagIssues = checkCompletionFlag(set.flows)
 
       state.lastRun = {
         mode: state.mode,
         env,
         bivrName: set.bivrName,
         apiIssues, phoneIssues, jumpIssues,
+        promptIssues, ctxrouterIssues, regexIssues,
+        openaiIssues, reconfirmIssues, flagIssues,
       }
     }
 
@@ -293,7 +312,11 @@ function rerenderReport() {
   const report = generateReport(r)
   state.lastReport = report
 
-  const all = [...(r.apiIssues || []), ...(r.phoneIssues || []), ...(r.jumpIssues || []), ...(r.diffIssues || [])]
+  const all = [
+    ...(r.apiIssues || []), ...(r.phoneIssues || []), ...(r.jumpIssues || []), ...(r.diffIssues || []),
+    ...(r.promptIssues || []), ...(r.ctxrouterIssues || []), ...(r.regexIssues || []),
+    ...(r.openaiIssues || []), ...(r.reconfirmIssues || []), ...(r.flagIssues || []),
+  ]
   const errors = all.filter(i => i.severity === 'ERROR').length
   const warnings = all.filter(i => i.severity === 'WARNING').length
   const pass = errors === 0

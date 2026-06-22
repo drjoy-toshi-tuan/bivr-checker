@@ -37,11 +37,19 @@ Kết hợp nhiều phần:
 python main.py "<path/to/file.bivr>" <master|demo> --props "<path/to/ivr.properties>" --only api phone jump
 ```
 
-**Tùy chọn --only:** `api`, `phone`, `jump`, `diff`
+**Tùy chọn --only:** `api`, `phone`, `jump`, `diff`, `prompt`, `ctxrouter`, `regex`, `openai`, `reconfirm`, `flag`
 - `api`: Kiểm tra API URL trong IVR Properties (cần `--props`)
 - `phone`: Kiểm tra số điện thoại chuyển tiếp (liệt kê tất cả số, cảnh báo số test)
 - `jump`: Kiểm tra Jump to Flow (tên flow đích có tồn tại không)
 - `diff`: So sánh với bản hiện hành (cần `--compare`)
+- `prompt`: **(MIX — cần `--props`)** Kiểm tra prompt/announce TTS, đối chiếu Property ↔ Flow. Cú pháp hợp lệ `{tts_g:...}` / `{tts_ai:...}` / `{tts_ai_prop:...}{tts_ai:...}`. Module rỗng prompt phải có `<tên module>.prompt` trong Property.
+- `ctxrouter`: Kiểm tra ContextMatchRouter — object `<%...%>` dùng ở module1Name/module2Name đã được tạo chưa; tên module thường có hợp lệ không.
+- `regex`: Kiểm tra regex condition jump (`next[].condition`) dính dấu cách 半角/全角 (làm flow dừng).
+- `openai`: Kiểm tra generate_by_OpenAI — `module` input hợp lệ (không rỗng/`module`/không tồn tại), cảnh báo trùng module input, cảnh báo thiếu catch-all `^.*$`/`^.+$`.
+- `reconfirm`: Kiểm tra Re-confirmation node data — object `<%...%>` đã tạo chưa; `#data#` thì `nodeName` phải tồn tại trong flow.
+- `flag`: Kiểm tra saveCompletionFlag2db — `status`/`smsFlag` bị để trống (WARNING).
+
+**Phân loại:** `prompt` là loại **hỗn hợp (mix)** cần cả Property + Flow; `ctxrouter`/`regex`/`openai`/`reconfirm`/`flag` chỉ cần Flow.
 
 **Môi trường:**
 - `master` = 本番（本番環境）

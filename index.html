@@ -130,6 +130,46 @@
                   <span class="check-label-text" data-i18n="check_jump">Jump to Flow チェック</span>
                 </span>
               </label>
+              <label class="check-label" data-check="ctxrouter" data-scope="flow">
+                <input type="checkbox" class="check-input" value="ctxrouter" checked>
+                <span class="check-custom"></span>
+                <span class="opt-text">
+                  <i class="fa-solid fa-code-branch opt-ico"></i>
+                  <span class="check-label-text" data-i18n="check_ctxrouter">ContextMatchRouter チェック</span>
+                </span>
+              </label>
+              <label class="check-label" data-check="regex" data-scope="flow">
+                <input type="checkbox" class="check-input" value="regex" checked>
+                <span class="check-custom"></span>
+                <span class="opt-text">
+                  <i class="fa-solid fa-asterisk opt-ico"></i>
+                  <span class="check-label-text" data-i18n="check_regex">正規表現スペースチェック</span>
+                </span>
+              </label>
+              <label class="check-label" data-check="openai" data-scope="flow">
+                <input type="checkbox" class="check-input" value="openai" checked>
+                <span class="check-custom"></span>
+                <span class="opt-text">
+                  <i class="fa-solid fa-robot opt-ico"></i>
+                  <span class="check-label-text" data-i18n="check_openai">generate_by_OpenAI チェック</span>
+                </span>
+              </label>
+              <label class="check-label" data-check="reconfirm" data-scope="flow">
+                <input type="checkbox" class="check-input" value="reconfirm" checked>
+                <span class="check-custom"></span>
+                <span class="opt-text">
+                  <i class="fa-solid fa-rotate opt-ico"></i>
+                  <span class="check-label-text" data-i18n="check_reconfirm">Re-confirmation node data チェック</span>
+                </span>
+              </label>
+              <label class="check-label" data-check="flag" data-scope="flow">
+                <input type="checkbox" class="check-input" value="flag" checked>
+                <span class="check-custom"></span>
+                <span class="opt-text">
+                  <i class="fa-solid fa-flag-checkered opt-ico"></i>
+                  <span class="check-label-text" data-i18n="check_flag">saveCompletionFlag2db チェック</span>
+                </span>
+              </label>
               <label class="check-label" data-check="diff" data-scope="flow">
                 <input type="checkbox" class="check-input" value="diff" checked>
                 <span class="check-custom"></span>
@@ -153,6 +193,23 @@
                 <span class="opt-text">
                   <i class="fa-solid fa-link opt-ico"></i>
                   <span class="check-label-text" data-i18n="check_api">API URL チェック</span>
+                </span>
+              </label>
+            </div>
+          </div>
+          <!-- Mix category (Property + Flow) -->
+          <div class="check-cat" data-cat="mix">
+            <div class="check-cat-head check-cat-mix">
+              <i class="fa-solid fa-layer-group"></i>
+              <span data-i18n="scope_mix">プロパティ＋フロー</span>
+            </div>
+            <div class="check-cat-body">
+              <label class="check-label" data-check="prompt" data-scope="mix">
+                <input type="checkbox" class="check-input" value="prompt" checked>
+                <span class="check-custom"></span>
+                <span class="opt-text">
+                  <i class="fa-solid fa-comment-dots opt-ico"></i>
+                  <span class="check-label-text" data-i18n="check_prompt">プロンプト / アナウンス チェック</span>
                 </span>
               </label>
             </div>

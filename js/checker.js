@@ -53,6 +53,29 @@ const JUMP_TYPE = 'drjoy^Custom Module$Custom Jump to Flow'
 const TRANSFER_TYPE = 'drjoy^Call Transfer$call-transfer'
 const TTS_TYPE = 'drjoy^Text To Speech$Text to speech'
 
+// ── Module types cho các check hỗn hợp (Property + Flow) ──────────────────────--
+const TTS_RECONFIRM = 'drjoy^Text To Speech$Re-confirmation node data'
+const TTS_RETRY_COUNTER = 'drjoy^Text To Speech$Speech Retry Counter'
+const DTMF_CUSTOM = 'drjoy^External Integration$DTMF Custom'
+const DTMF_AMIVOICE = 'drjoy^External Integration$DTMF AmiVoice STT Input'
+const PHONE_NORMALIZATION = 'drjoy^TS Custom Module$Phone Normalization'
+const DOB_RECONFIRM = 'drjoy^TS Custom Module$DOB Re-confirmation'
+const CONTEXT_MATCH_ROUTER = 'drjoy^Context Logic$ContextMatchRouter'
+const GENERATE_BY_OPENAI = 'drjoy^External Integration$generate_by_OpenAI'
+const SAVE_COMPLETION_FLAG = 'drjoy^Persistence$saveCompletionFlag2db'
+const SAVE2DB = 'drjoy^Persistence$save2db'
+const SAVE_CONTEXT2DB = 'drjoy^Persistence$saveContext2DB'
+const MODULE_RESULT_BINDER = 'drjoy^TS Custom Module$Module Result Binder'
+const SCRIPT_TYPE = '@General$Script'
+
+// Module dùng 1 prompt TTS duy nhất (params.prompt = {tts_g/tts_ai:...})
+const PROMPT_SINGLE_MODULES = new Set([TTS_TYPE, TTS_RECONFIRM, PHONE_NORMALIZATION, DOB_RECONFIRM])
+// Module DTMF: params.prompt = "{recstart}" (marker), TTS thật ở params.prompt_retry
+const DTMF_MODULES = new Set([DTMF_CUSTOM, DTMF_AMIVOICE])
+// Object hệ thống (built-in) — luôn coi như đã tạo
+const BUILTIN_OBJECTS = new Set(['incoming_phone'])
+const CATCH_ALL = new Set(['^.*$', '^.+$'])
+
 // ── Parsers ───────────────────────────────────────────────────────────────────
 async function parseBivr(file) {
   const zip = await JSZip.loadAsync(file)
@@ -279,6 +302,226 @@ function diffFlows(flowsBase, flowsNew) {
         issues.push({ type: 'module_params_changed', severity: 'WARNING', flow: name, detail: `Module \`${mod}\`` })
       if (JSON.stringify(bm.next) !== JSON.stringify(nm.next))
         issues.push({ type: 'module_transitions_changed', severity: 'WARNING', flow: name, detail: `Module \`${mod}\`` })
+    }
+  }
+  return issues
+}
+
+// ── Helpers cho check hỗn hợp (Property + Flow) ───────────────────────────────--
+const _OBJECT_RE = /<%\s*([^%>]+?)\s*%>/g
+const _OBJECT_ONLY_RE = /^<%\s*([^%>]+?)\s*%>$/
+const _SETOBJECT_RE = /setObject\s*\(\s*["']([^"']+)["']/g
+
+function findObjects(text) {
+  if (!text) return []
+  const out = []
+  let m
+  _OBJECT_RE.lastIndex = 0
+  while ((m = _OBJECT_RE.exec(text)) !== null) out.push(m[1].trim())
+  return out
+}
+
+function collectCreatedObjects(flows) {
+  const objs = new Set(BUILTIN_OBJECTS)
+  const add = v => { if (v && String(v).trim()) objs.add(String(v).trim()) }
+  for (const flow of Object.values(flows)) {
+    for (const mod of Object.values(flow.modules || {})) {
+      const t = mod.type || ''
+      const p = mod.params || {}
+      if (t === SAVE2DB || t === SAVE_CONTEXT2DB || t === GENERATE_BY_OPENAI) {
+        add(p.contextName)
+      } else if (t === MODULE_RESULT_BINDER) {
+        add(p.contextName); add(p.variable)
+      } else if (t === SCRIPT_TYPE) {
+        let m
+        _SETOBJECT_RE.lastIndex = 0
+        while ((m = _SETOBJECT_RE.exec(p.script || '')) !== null) add(m[1])
+      }
+    }
+  }
+  objs.delete('')
+  return objs
+}
+
+function flowModuleNames(flow) {
+  return new Set(Object.keys(flow.modules || {}))
+}
+function allModuleNames(flows) {
+  const names = new Set()
+  for (const flow of Object.values(flows)) for (const n of Object.keys(flow.modules || {})) names.add(n)
+  return names
+}
+
+// Cú pháp prompt TTS hợp lệ: {tts_g:...} / {tts_ai:...} / {tts_ai_prop:...}{tts_ai:...}
+const _TTS_G_RE = /^\{tts_g:[\s\S]*\}$/
+const _TTS_AI_RE = /^\{tts_ai:[\s\S]*\}$/
+const _TTS_AI_PROP_RE = /^\{tts_ai_prop:X-Aitalkd-Api-Key=.+,body_2=\{[\s\S]*\}\}\{tts_ai:[\s\S]*\}$/
+
+function validateTtsSyntax(value) {
+  if (value == null) return false
+  const v = String(value).trim()
+  if (!v) return false
+  if (_TTS_G_RE.test(v) || _TTS_AI_RE.test(v)) return true
+  if (v.startsWith('{tts_ai_prop:')) return _TTS_AI_PROP_RE.test(v)
+  return false
+}
+
+// ── Check #1 (MIX): Prompt / Announce TTS ─────────────────────────────────────--
+function checkPromptTts(flows, props) {
+  const issues = []
+  props = props || {}
+  const moduleNames = allModuleNames(flows)
+
+  // A. Các dòng .prompt trong IVR Property
+  for (const [key, value] of Object.entries(props)) {
+    if (!key.endsWith('.prompt')) continue
+    const modName = key.slice(0, -'.prompt'.length)
+    if (!validateTtsSyntax(value)) {
+      issues.push({ type: 'prop_prompt_syntax', severity: 'ERROR', field: key, value })
+    }
+    if (!moduleNames.has(modName)) {
+      issues.push({ type: 'prop_prompt_no_module', severity: 'WARNING', field: modName })
+    }
+  }
+
+  // B. Prompt trong từng module TTS của flow
+  for (const [flowName, flow] of Object.entries(flows)) {
+    for (const [modName, mod] of Object.entries(flow.modules || {})) {
+      const t = mod.type || ''
+      const p = mod.params || {}
+      if (PROMPT_SINGLE_MODULES.has(t)) {
+        const val = (p.prompt || '').trim()
+        if (val) {
+          if (!validateTtsSyntax(val))
+            issues.push({ type: 'flow_prompt_syntax', severity: 'ERROR', flow: flowName, module: modName, value: val })
+        } else if (!(modName + '.prompt' in props)) {
+          issues.push({ type: 'prompt_not_set', severity: 'ERROR', flow: flowName, module: modName })
+        }
+      } else if (t === TTS_RETRY_COUNTER) {
+        for (const fld of ['prompt_true', 'prompt_false']) {
+          const val = (p[fld] || '').trim()
+          if (val && !validateTtsSyntax(val))
+            issues.push({ type: 'flow_prompt_syntax', severity: 'ERROR', flow: flowName, module: modName, field: fld, value: val })
+        }
+      } else if (DTMF_MODULES.has(t)) {
+        const val = (p.prompt_retry || '').trim()
+        if (val && !validateTtsSyntax(val))
+          issues.push({ type: 'flow_prompt_syntax', severity: 'ERROR', flow: flowName, module: modName, field: 'prompt_retry', value: val })
+      }
+    }
+  }
+  return issues
+}
+
+// ── Check #2 (FLOW): ContextMatchRouter — object tồn tại ──────────────────────--
+function checkContextRouter(flows) {
+  const issues = []
+  const objects = collectCreatedObjects(flows)
+  for (const [flowName, flow] of Object.entries(flows)) {
+    const modNames = flowModuleNames(flow)
+    for (const [modName, mod] of Object.entries(flow.modules || {})) {
+      if (mod.type !== CONTEXT_MATCH_ROUTER) continue
+      const p = mod.params || {}
+      for (const slot of ['module1Name', 'module2Name']) {
+        const raw = (p[slot] || '').trim()
+        if (!raw) continue
+        const m = _OBJECT_ONLY_RE.exec(raw)
+        if (m) {
+          const obj = m[1].trim()
+          if (!objects.has(obj))
+            issues.push({ type: 'ctxrouter_object_missing', severity: 'ERROR', flow: flowName, module: modName, slot, object: obj })
+        } else if (!modNames.has(raw)) {
+          issues.push({ type: 'ctxrouter_module_missing', severity: 'ERROR', flow: flowName, module: modName, slot, ref: raw })
+        }
+      }
+    }
+  }
+  return issues
+}
+
+// ── Check #3 (FLOW): Regex condition jump dính dấu cách ───────────────────────--
+function checkRegexSpace(flows) {
+  const issues = []
+  for (const [flowName, flow] of Object.entries(flows)) {
+    for (const [modName, mod] of Object.entries(flow.modules || {})) {
+      for (const nx of mod.next || []) {
+        const cond = nx.condition || ''
+        if (!cond) continue
+        if (cond.includes(' ') || cond.includes('　')) {
+          const kind = cond.includes('　') ? '全角' : '半角'
+          issues.push({ type: 'regex_space', severity: 'ERROR', flow: flowName, module: modName, label: nx.label || '', condition: cond, spaceKind: kind })
+        }
+      }
+    }
+  }
+  return issues
+}
+
+// ── Check #4 (FLOW): generate_by_OpenAI ───────────────────────────────────────--
+function checkOpenaiModule(flows) {
+  const issues = []
+  for (const [flowName, flow] of Object.entries(flows)) {
+    const modNames = flowModuleNames(flow)
+    const refCount = {}
+    const openaiMods = []
+    for (const [modName, mod] of Object.entries(flow.modules || {})) {
+      if (mod.type !== GENERATE_BY_OPENAI) continue
+      const p = mod.params || {}
+      const mref = (p.module || '').trim()
+      openaiMods.push({ modName, mod, mref })
+      if (mref === '' || mref === 'module' || !modNames.has(mref)) {
+        const reason = mref === '' ? 'empty' : (mref === 'module' ? 'literal' : 'not_found')
+        issues.push({ type: 'openai_module_invalid', severity: 'ERROR', flow: flowName, module: modName, ref: mref, reason })
+      } else {
+        refCount[mref] = (refCount[mref] || 0) + 1
+      }
+      const conds = new Set((mod.next || []).map(n => n.condition || ''))
+      if (![...conds].some(c => CATCH_ALL.has(c)))
+        issues.push({ type: 'openai_no_catchall', severity: 'WARNING', flow: flowName, module: modName })
+    }
+    const dup = new Set(Object.entries(refCount).filter(([, c]) => c >= 2).map(([r]) => r))
+    for (const { modName, mref } of openaiMods) {
+      if (dup.has(mref))
+        issues.push({ type: 'openai_dup_module', severity: 'WARNING', flow: flowName, module: modName, ref: mref })
+    }
+  }
+  return issues
+}
+
+// ── Check #5 (FLOW): Re-confirmation node data ────────────────────────────────--
+function checkReconfirm(flows) {
+  const issues = []
+  const objects = collectCreatedObjects(flows)
+  for (const [flowName, flow] of Object.entries(flows)) {
+    const modNames = flowModuleNames(flow)
+    for (const [modName, mod] of Object.entries(flow.modules || {})) {
+      if (mod.type !== TTS_RECONFIRM) continue
+      const prompt = (mod.params || {}).prompt || ''
+      for (const obj of findObjects(prompt)) {
+        if (!objects.has(obj))
+          issues.push({ type: 'reconfirm_object_missing', severity: 'ERROR', flow: flowName, module: modName, object: obj })
+      }
+      if (prompt.includes('#data#')) {
+        const node = ((mod.params || {}).nodeName || '').trim()
+        if (!node) issues.push({ type: 'reconfirm_nodename_empty', severity: 'ERROR', flow: flowName, module: modName })
+        else if (!modNames.has(node)) issues.push({ type: 'reconfirm_nodename_missing', severity: 'ERROR', flow: flowName, module: modName, node })
+      }
+    }
+  }
+  return issues
+}
+
+// ── Check #6 (FLOW): saveCompletionFlag2db ────────────────────────────────────--
+function checkCompletionFlag(flows) {
+  const issues = []
+  for (const [flowName, flow] of Object.entries(flows)) {
+    for (const [modName, mod] of Object.entries(flow.modules || {})) {
+      if (mod.type !== SAVE_COMPLETION_FLAG) continue
+      const p = mod.params || {}
+      for (const [fld, itype] of [['status', 'flag_status_empty'], ['smsFlag', 'flag_sms_empty']]) {
+        if (!(p[fld] || '').trim())
+          issues.push({ type: itype, severity: 'WARNING', flow: flowName, module: modName, field: fld })
+      }
     }
   }
   return issues

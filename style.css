@@ -541,6 +541,8 @@ body {
 .check-cat-flow i { color: var(--success); }
 .check-cat-property { color: var(--info); }
 .check-cat-property i { color: var(--info); }
+.check-cat-mix { color: var(--warning); }
+.check-cat-mix i { color: var(--warning); }
 .check-cat-body { display: flex; flex-direction: column; gap: 4px; }
 .check-label.disabled { opacity: 0.4; cursor: not-allowed; }
 .check-custom {
