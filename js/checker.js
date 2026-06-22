@@ -229,12 +229,17 @@ function checkJumpToFlow(flows) {
       if (mod.type !== JUMP_TYPE) continue
       const flowname = (mod.params || {}).flowname || ''
       if (!flowname) {
-        const severity = isSubflow(flowName) ? 'WARNING' : 'ERROR'
+        const isSub = isSubflow(flowName)
+        const severity = isSub ? 'WARNING' : 'ERROR'
+        const status = isSub ? 'empty_subflow' : 'empty'
+        issues.push({ type: 'jump_module', severity: 'INFO', flow: flowName, module: modName, target: null, status })
         issues.push({ type: 'empty_jump_target', severity, flow: flowName, module: modName, target: null })
         continue
       }
       const target = flowname.startsWith('drjoy^') ? flowname.slice('drjoy^'.length) : flowname
-      if (!flowNames.has(target)) {
+      const valid = flowNames.has(target)
+      issues.push({ type: 'jump_module', severity: 'INFO', flow: flowName, module: modName, target, status: valid ? 'ok' : 'invalid' })
+      if (!valid) {
         issues.push({ type: 'invalid_jump_target', severity: 'ERROR', flow: flowName, module: modName, target })
       }
     }
