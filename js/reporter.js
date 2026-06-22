@@ -16,7 +16,7 @@ function _fmtFlow(name) {
 function _renderApiSection(issues, envLabel) {
   const lines = [`## ${_t('sec_api')}`, '']
   if (!issues.length) {
-    lines.push(`🟢 ${_t('api_ok')}`, '')
+    lines.push(_t('api_ok'), '')
     return lines
   }
   for (const i of issues) {
@@ -52,7 +52,7 @@ function _renderPhoneSection(issues) {
   }
 
   if (!warnings.length) {
-    lines.push(`🟢 ${_t('phone_ok')}`, '')
+    lines.push(_t('phone_ok'), '')
   } else {
     for (const i of warnings) {
       const e = SEV_EMOJI[i.severity] || '⚪'
@@ -89,7 +89,7 @@ function _renderJumpSection(issues) {
   }
 
   if (!problems.length) {
-    lines.push(`🟢 ${_t('jump_ok')}`, '')
+    lines.push(_t('jump_ok'), '')
   } else {
     for (const i of problems) {
       const e = SEV_EMOJI[i.severity] || '⚪'
@@ -163,59 +163,41 @@ function envLabel(env) {
   return _t('env_unknown')
 }
 
-// ── Generic section (các check hỗn hợp theo flow) ──────────────────────────────
-function _issueDetail(i) {
-  const parts = []
-  if (i.object) parts.push(`object: \`<%${i.object}%>\``)
-  if (i.ref) parts.push(`${_t('lbl_value')}: \`${i.ref}\``)
-  if (i.node) parts.push(`nodeName: \`${i.node}\``)
-  if (i.label) parts.push(`label: \`${i.label}\``)
-  if (i.slot) parts.push(`${_t('lbl_slot')}: \`${i.slot}\``)
-  if (i.field && i.type !== 'prop_prompt_no_module') parts.push(`field: \`${i.field}\``)
-  if (i.condition) parts.push(`regex: \`${i.condition}\``)
+// ── Generic section (các check hỗn hợp — định dạng giống mục 「転送」) ──────────
+function _issueDetailBullets(i) {
+  const out = []
+  if (i.object) out.push(`- object: \`<%${i.object}%>\``)
+  if (i.ref) out.push(`- ${_t('lbl_value')}: \`${i.ref}\``)
+  if (i.node) out.push(`- nodeName: \`${i.node}\``)
+  if (i.label) out.push(`- label: \`${i.label}\``)
+  if (i.slot) out.push(`- ${_t('lbl_slot')}: \`${i.slot}\``)
+  if (i.field) out.push(`- field: \`${i.field}\``)
+  if (i.condition) out.push(`- regex: \`${i.condition}\``)
   if (i.value) {
     const v = i.value.length <= 80 ? i.value : i.value.slice(0, 80) + '…'
-    parts.push(`${_t('lbl_value')}: \`${v}\``)
+    out.push(`- ${_t('lbl_value')}: \`${v}\``)
   }
-  return parts.length ? ' — ' + parts.join(' · ') : ''
+  return out
 }
 
 function _renderGenericSection(title, issues, okMsg) {
   const lines = [`## ${title}`, '']
   if (!issues.length) {
-    lines.push(`🟢 ${okMsg}`, '')
+    lines.push(okMsg, '')
     return lines
   }
   const errors = issues.filter(i => i.severity === 'ERROR').length
   const warnings = issues.filter(i => i.severity === 'WARNING').length
-  lines.push(`**${_t('gen_total')}:** 🔴 ${errors} ${_t('errors_label')} · 🟡 ${warnings} ${_t('warnings_label')}`, '')
+  lines.push(`🔴 ${errors} ${_t('errors_label')}　🟡 ${warnings} ${_t('warnings_label')}`, '')
 
-  const byFlow = {}
-  const noFlow = []
   for (const i of issues) {
-    if (i.flow) (byFlow[i.flow] = byFlow[i.flow] || []).push(i)
-    else noFlow.push(i)
-  }
-
-  if (noFlow.length) {
-    lines.push(`### ${_t('sec_ivr_property')}`, '')
-    for (const i of noFlow) {
-      const e = SEV_EMOJI[i.severity] || '⚪'
-      const desc = _t('type_' + _typeKey(i.type))
-      const key = i.field ? `\`${i.field}\`` : ''
-      lines.push(`- ${e} **${desc}** ${key}${_issueDetail(i)}`)
-    }
-    lines.push('')
-  }
-
-  for (const [flow, flowIssues] of Object.entries(byFlow)) {
-    lines.push(`### Flow: \`${_fmtFlow(flow)}\``, '')
-    for (const i of flowIssues) {
-      const e = SEV_EMOJI[i.severity] || '⚪'
-      const desc = _t('type_' + _typeKey(i.type))
-      const mod = i.module ? `\`${i.module}\`` : ''
-      lines.push(`- ${e} ${mod} **${desc}**${_issueDetail(i)}`)
-    }
+    const e = SEV_EMOJI[i.severity] || '⚪'
+    const lbl = _t('sev_' + i.severity.toLowerCase())
+    const loc = i.flow ? `Flow: \`${_fmtFlow(i.flow)}\`` : _t('sec_ivr_property')
+    lines.push(`### ${e} ${lbl} — ${loc}`, '')
+    if (i.module) lines.push(`- **${_t('lbl_module')}**: \`${i.module}\``)
+    lines.push(`- **${_t('lbl_desc')}**: ${_t('type_' + _typeKey(i.type))}`)
+    lines.push(..._issueDetailBullets(i))
     lines.push('')
   }
   return lines
@@ -260,13 +242,13 @@ function generateReport(opts) {
   if (apiIssues !== null) sections.push(_renderApiSection(apiIssues, envText))
   if (phoneIssues !== null) sections.push(_renderPhoneSection(phoneIssues))
   if (jumpIssues !== null) sections.push(_renderJumpSection(jumpIssues))
-  if (promptIssues !== null) sections.push(_renderGenericSection(_t('sec_prompt'), promptIssues, _t('prompt_ok')))
-  if (ctxrouterIssues !== null) sections.push(_renderGenericSection(_t('sec_ctxrouter'), ctxrouterIssues, _t('ctxrouter_ok')))
-  if (regexIssues !== null) sections.push(_renderGenericSection(_t('sec_regex'), regexIssues, _t('regex_ok')))
-  if (openaiIssues !== null) sections.push(_renderGenericSection(_t('sec_openai'), openaiIssues, _t('openai_ok')))
-  if (reconfirmIssues !== null) sections.push(_renderGenericSection(_t('sec_reconfirm'), reconfirmIssues, _t('reconfirm_ok')))
-  if (flagIssues !== null) sections.push(_renderGenericSection(_t('sec_flag'), flagIssues, _t('flag_ok')))
-  if (submodIssues !== null) sections.push(_renderGenericSection(_t('sec_submod'), submodIssues, _t('submod_ok')))
+  if (promptIssues !== null) sections.push(_renderGenericSection(_t('sec_prompt'), promptIssues, _t('no_issues')))
+  if (ctxrouterIssues !== null) sections.push(_renderGenericSection(_t('sec_ctxrouter'), ctxrouterIssues, _t('no_issues')))
+  if (regexIssues !== null) sections.push(_renderGenericSection(_t('sec_regex'), regexIssues, _t('no_issues')))
+  if (openaiIssues !== null) sections.push(_renderGenericSection(_t('sec_openai'), openaiIssues, _t('no_issues')))
+  if (reconfirmIssues !== null) sections.push(_renderGenericSection(_t('sec_reconfirm'), reconfirmIssues, _t('no_issues')))
+  if (flagIssues !== null) sections.push(_renderGenericSection(_t('sec_flag'), flagIssues, _t('no_issues')))
+  if (submodIssues !== null) sections.push(_renderGenericSection(_t('sec_submod'), submodIssues, _t('no_issues')))
   if (diffIssues !== null) sections.push(_renderDiffSection(diffIssues, compareName || '', envLabel(masterEnv), envLabel(demoEnv)))
 
   for (let i = 0; i < sections.length; i++) {

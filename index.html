@@ -38,8 +38,7 @@
 
   <!-- ── Hero ──────────────────────────────────────────────────────────────── -->
   <section class="hero">
-    <h2 class="hero-title" data-i18n="hero_title">BIVR ファイルを安全に検証</h2>
-    <p class="hero-desc" data-i18n="hero_desc">ファイルをアップロードし、チェック項目を選択して実行するだけ。すべてブラウザ内で処理されます。</p>
+    <h2 class="hero-title" data-i18n="hero_title">AI電話シナリオフローを安全に検証</h2>
     <div class="hero-badges">
       <span class="hero-badge"><i class="fa-solid fa-lock"></i> <span data-i18n="hero_badge_local">ローカル処理</span></span>
       <span class="hero-badge"><i class="fa-solid fa-bolt"></i> <span data-i18n="hero_badge_fast">高速</span></span>
@@ -62,35 +61,35 @@
     <div class="card-body" id="settingBody">
     <!-- Mode cards -->
     <div class="mode-grid" id="modeGrid">
-      <label class="mode-card">
+      <label class="mode-card mode-deploy">
         <input type="radio" name="mode" value="deploy">
         <span class="mode-body">
           <span class="mode-ico"><i class="fa-solid fa-rocket"></i></span>
-          <span class="mode-title" data-i18n="mode_deploy_title">本番デプロイ前の全体チェック</span>
+          <span class="mode-title" data-i18n="mode_deploy_title">本番適用前の全体検証</span>
           <span class="mode-desc" data-i18n="mode_deploy_desc"></span>
         </span>
       </label>
-      <label class="mode-card">
+      <label class="mode-card mode-flow">
         <input type="radio" name="mode" value="flow">
         <span class="mode-body">
           <span class="mode-ico"><i class="fa-solid fa-diagram-project"></i></span>
-          <span class="mode-title" data-i18n="mode_flow_title">フローのみチェック</span>
+          <span class="mode-title" data-i18n="mode_flow_title">フローのみ検証</span>
           <span class="mode-desc" data-i18n="mode_flow_desc"></span>
         </span>
       </label>
-      <label class="mode-card">
+      <label class="mode-card mode-property">
         <input type="radio" name="mode" value="property">
         <span class="mode-body">
           <span class="mode-ico"><i class="fa-solid fa-sliders"></i></span>
-          <span class="mode-title" data-i18n="mode_property_title">IVR プロパティのみチェック</span>
+          <span class="mode-title" data-i18n="mode_property_title">IVRプロパティのみ検証</span>
           <span class="mode-desc" data-i18n="mode_property_desc"></span>
         </span>
       </label>
-      <label class="mode-card">
+      <label class="mode-card mode-compare">
         <input type="radio" name="mode" value="compare">
         <span class="mode-body">
           <span class="mode-ico"><i class="fa-solid fa-code-compare"></i></span>
-          <span class="mode-title" data-i18n="mode_compare_title">2 環境間のフロー比較</span>
+          <span class="mode-title" data-i18n="mode_compare_title">2環境間のフロー比較</span>
           <span class="mode-desc" data-i18n="mode_compare_desc"></span>
         </span>
       </label>
@@ -107,119 +106,128 @@
           <button class="check-all-btn" id="checkAllBtn" data-i18n="check_all">すべて選択</button>
         </div>
         <div class="checks-grid" id="checksGrid">
-          <!-- Flow category -->
-          <div class="check-cat" data-cat="flow">
-            <div class="check-cat-head check-cat-flow">
-              <i class="fa-solid fa-diagram-project"></i>
-              <span data-i18n="scope_flow">フロー</span>
-            </div>
-            <div class="check-cat-body">
-              <label class="check-label" data-check="phone" data-scope="flow">
-                <input type="checkbox" class="check-input" value="phone" checked>
-                <span class="check-custom"></span>
-                <span class="opt-text">
-                  <i class="fa-solid fa-phone-volume opt-ico"></i>
-                  <span class="check-label-text" data-i18n="check_phone">電話番号チェック</span>
-                </span>
-              </label>
-              <label class="check-label" data-check="jump" data-scope="flow">
-                <input type="checkbox" class="check-input" value="jump" checked>
-                <span class="check-custom"></span>
-                <span class="opt-text">
-                  <i class="fa-solid fa-arrow-right-arrow-left opt-ico"></i>
-                  <span class="check-label-text" data-i18n="check_jump">Jump to Flow チェック</span>
-                </span>
-              </label>
-              <label class="check-label" data-check="ctxrouter" data-scope="flow">
-                <input type="checkbox" class="check-input" value="ctxrouter" checked>
-                <span class="check-custom"></span>
-                <span class="opt-text">
-                  <i class="fa-solid fa-code-branch opt-ico"></i>
-                  <span class="check-label-text" data-i18n="check_ctxrouter">ContextMatchRouter チェック</span>
-                </span>
-              </label>
-              <label class="check-label" data-check="regex" data-scope="flow">
-                <input type="checkbox" class="check-input" value="regex" checked>
-                <span class="check-custom"></span>
-                <span class="opt-text">
-                  <i class="fa-solid fa-asterisk opt-ico"></i>
-                  <span class="check-label-text" data-i18n="check_regex">正規表現スペースチェック</span>
-                </span>
-              </label>
-              <label class="check-label" data-check="openai" data-scope="flow">
-                <input type="checkbox" class="check-input" value="openai" checked>
-                <span class="check-custom"></span>
-                <span class="opt-text">
-                  <i class="fa-solid fa-robot opt-ico"></i>
-                  <span class="check-label-text" data-i18n="check_openai">generate_by_OpenAI チェック</span>
-                </span>
-              </label>
-              <label class="check-label" data-check="reconfirm" data-scope="flow">
-                <input type="checkbox" class="check-input" value="reconfirm" checked>
-                <span class="check-custom"></span>
-                <span class="opt-text">
-                  <i class="fa-solid fa-rotate opt-ico"></i>
-                  <span class="check-label-text" data-i18n="check_reconfirm">Re-confirmation node data チェック</span>
-                </span>
-              </label>
-              <label class="check-label" data-check="flag" data-scope="flow">
-                <input type="checkbox" class="check-input" value="flag" checked>
-                <span class="check-custom"></span>
-                <span class="opt-text">
-                  <i class="fa-solid fa-flag-checkered opt-ico"></i>
-                  <span class="check-label-text" data-i18n="check_flag">saveCompletionFlag2db チェック</span>
-                </span>
-              </label>
-              <label class="check-label" data-check="submod" data-scope="flow">
-                <input type="checkbox" class="check-input" value="submod" checked>
-                <span class="check-custom"></span>
-                <span class="opt-text">
-                  <i class="fa-solid fa-sitemap opt-ico"></i>
-                  <span class="check-label-text" data-i18n="check_submod">サブモジュール チェック</span>
-                </span>
-              </label>
-              <label class="check-label" data-check="diff" data-scope="flow">
-                <input type="checkbox" class="check-input" value="diff" checked>
-                <span class="check-custom"></span>
-                <span class="opt-text">
-                  <i class="fa-solid fa-code-compare opt-ico"></i>
-                  <span class="check-label-text" data-i18n="check_diff">差分チェック</span>
-                </span>
-              </label>
+          <!-- Column 1: Flow -->
+          <div class="check-col">
+            <div class="check-cat" data-cat="flow">
+              <div class="check-cat-head check-cat-flow">
+                <span class="cat-head-label"><i class="fa-solid fa-diagram-project"></i> <span data-i18n="scope_flow">フロー</span></span>
+                <button type="button" class="cat-toggle" data-cat-toggle="flow" data-i18n-title="cat_select_all" title="">
+                  <i class="fa-solid fa-list-check"></i>
+                </button>
+              </div>
+              <div class="check-cat-body">
+                <label class="check-label" data-check="phone" data-scope="flow">
+                  <input type="checkbox" class="check-input" value="phone" checked>
+                  <span class="check-custom"></span>
+                  <span class="opt-text">
+                    <i class="fa-solid fa-phone-volume opt-ico"></i>
+                    <span class="check-label-text" data-i18n="check_phone">「転送」モジュール検証</span>
+                  </span>
+                </label>
+                <label class="check-label" data-check="jump" data-scope="flow">
+                  <input type="checkbox" class="check-input" value="jump" checked>
+                  <span class="check-custom"></span>
+                  <span class="opt-text">
+                    <i class="fa-solid fa-arrow-right-arrow-left opt-ico"></i>
+                    <span class="check-label-text" data-i18n="check_jump">「Jump To Flow」モジュール検証</span>
+                  </span>
+                </label>
+                <label class="check-label" data-check="ctxrouter" data-scope="flow">
+                  <input type="checkbox" class="check-input" value="ctxrouter" checked>
+                  <span class="check-custom"></span>
+                  <span class="opt-text">
+                    <i class="fa-solid fa-code-branch opt-ico"></i>
+                    <span class="check-label-text" data-i18n="check_ctxrouter">「Context Match Router」モジュール検証</span>
+                  </span>
+                </label>
+                <label class="check-label" data-check="openai" data-scope="flow">
+                  <input type="checkbox" class="check-input" value="openai" checked>
+                  <span class="check-custom"></span>
+                  <span class="opt-text">
+                    <i class="fa-solid fa-robot opt-ico"></i>
+                    <span class="check-label-text" data-i18n="check_openai">「OpenAI」モジュール検証</span>
+                  </span>
+                </label>
+                <label class="check-label" data-check="reconfirm" data-scope="flow">
+                  <input type="checkbox" class="check-input" value="reconfirm" checked>
+                  <span class="check-custom"></span>
+                  <span class="opt-text">
+                    <i class="fa-solid fa-rotate opt-ico"></i>
+                    <span class="check-label-text" data-i18n="check_reconfirm">「復唱」モジュール検証</span>
+                  </span>
+                </label>
+                <label class="check-label" data-check="flag" data-scope="flow">
+                  <input type="checkbox" class="check-input" value="flag" checked>
+                  <span class="check-custom"></span>
+                  <span class="opt-text">
+                    <i class="fa-solid fa-flag-checkered opt-ico"></i>
+                    <span class="check-label-text" data-i18n="check_flag">「完了フラグ保存」モジュール検証</span>
+                  </span>
+                </label>
+                <label class="check-label" data-check="regex" data-scope="flow">
+                  <input type="checkbox" class="check-input" value="regex" checked>
+                  <span class="check-custom"></span>
+                  <span class="opt-text">
+                    <i class="fa-solid fa-asterisk opt-ico"></i>
+                    <span class="check-label-text" data-i18n="check_regex">全体の正規表現スペース検証</span>
+                  </span>
+                </label>
+                <label class="check-label" data-check="submod" data-scope="flow">
+                  <input type="checkbox" class="check-input" value="submod" checked>
+                  <span class="check-custom"></span>
+                  <span class="opt-text">
+                    <i class="fa-solid fa-sitemap opt-ico"></i>
+                    <span class="check-label-text" data-i18n="check_submod">全体のサブフロー設定検証</span>
+                  </span>
+                </label>
+              </div>
             </div>
           </div>
-          <!-- Property category -->
-          <div class="check-cat" data-cat="property">
-            <div class="check-cat-head check-cat-property">
-              <i class="fa-solid fa-sliders"></i>
-              <span data-i18n="scope_property">プロパティ</span>
+          <!-- Column 2: Property + Mix -->
+          <div class="check-col">
+            <div class="check-cat" data-cat="property">
+              <div class="check-cat-head check-cat-property">
+                <span class="cat-head-label"><i class="fa-solid fa-sliders"></i> <span data-i18n="scope_property">プロパティ</span></span>
+                <button type="button" class="cat-toggle" data-cat-toggle="property" data-i18n-title="cat_select_all" title="">
+                  <i class="fa-solid fa-list-check"></i>
+                </button>
+              </div>
+              <div class="check-cat-body">
+                <label class="check-label" data-check="api" data-scope="property">
+                  <input type="checkbox" class="check-input" value="api" checked>
+                  <span class="check-custom"></span>
+                  <span class="opt-text">
+                    <i class="fa-solid fa-link opt-ico"></i>
+                    <span class="check-label-text" data-i18n="check_api">APIリンク検証</span>
+                  </span>
+                </label>
+              </div>
             </div>
-            <div class="check-cat-body">
-              <label class="check-label" data-check="api" data-scope="property">
-                <input type="checkbox" class="check-input" value="api" checked>
-                <span class="check-custom"></span>
-                <span class="opt-text">
-                  <i class="fa-solid fa-link opt-ico"></i>
-                  <span class="check-label-text" data-i18n="check_api">API URL チェック</span>
-                </span>
-              </label>
-            </div>
-          </div>
-          <!-- Mix category (Property + Flow) -->
-          <div class="check-cat" data-cat="mix">
-            <div class="check-cat-head check-cat-mix">
-              <i class="fa-solid fa-layer-group"></i>
-              <span data-i18n="scope_mix">プロパティ＋フロー</span>
-            </div>
-            <div class="check-cat-body">
-              <label class="check-label" data-check="prompt" data-scope="mix">
-                <input type="checkbox" class="check-input" value="prompt" checked>
-                <span class="check-custom"></span>
-                <span class="opt-text">
-                  <i class="fa-solid fa-comment-dots opt-ico"></i>
-                  <span class="check-label-text" data-i18n="check_prompt">プロンプト / アナウンス チェック</span>
-                </span>
-              </label>
+            <div class="check-cat" data-cat="mix">
+              <div class="check-cat-head check-cat-mix">
+                <span class="cat-head-label"><i class="fa-solid fa-layer-group"></i> <span data-i18n="scope_mix">プロパティ＋フロー</span></span>
+                <button type="button" class="cat-toggle" data-cat-toggle="mix" data-i18n-title="cat_select_all" title="">
+                  <i class="fa-solid fa-list-check"></i>
+                </button>
+              </div>
+              <div class="check-cat-body">
+                <label class="check-label" data-check="prompt" data-scope="mix">
+                  <input type="checkbox" class="check-input" value="prompt" checked>
+                  <span class="check-custom"></span>
+                  <span class="opt-text">
+                    <i class="fa-solid fa-comment-dots opt-ico"></i>
+                    <span class="check-label-text" data-i18n="check_prompt">全体のアナウンス検証</span>
+                  </span>
+                </label>
+                <label class="check-label" data-check="diff" data-scope="mix">
+                  <input type="checkbox" class="check-input" value="diff" checked>
+                  <span class="check-custom"></span>
+                  <span class="opt-text">
+                    <i class="fa-solid fa-code-compare opt-ico"></i>
+                    <span class="check-label-text" data-i18n="check_diff">差分検証</span>
+                  </span>
+                </label>
+              </div>
             </div>
           </div>
         </div>
@@ -232,9 +240,12 @@
 
       <div class="upload-grid single-up" id="singleUpload">
         <div class="upload-zone" id="zipZone">
-          <span class="upload-icon-box req"><i class="fa-solid fa-file-zipper"></i></span>
-          <span class="upload-label" data-i18n="zip_label">エクスポート zip（必須）</span>
-          <span class="upload-hint" data-i18n="zip_hint_set"></span>
+          <span class="upload-icon-box req"><i class="fa-solid fa-file-zipper" id="zipIcon"></i></span>
+          <span class="upload-label">
+            <span class="upload-label-text" id="zipLabelText" data-i18n="up_deploy_label">エクスポートフローファイル（ZIP）</span>
+            <span class="req-stamp" data-i18n="required_stamp">必須</span>
+          </span>
+          <span class="upload-hint" id="zipHint" data-i18n="up_deploy_hint"></span>
           <span class="upload-filename" id="zipName"></span>
           <button class="file-clear" data-zone="zipZone" data-input="zipInput" data-key="zipFile"><i class="fa-solid fa-xmark"></i></button>
           <input type="file" id="zipInput" accept=".zip" hidden>
@@ -245,7 +256,10 @@
       <div class="upload-grid compare-up" id="compareUpload" hidden>
         <div class="upload-zone" id="demoZone">
           <span class="upload-icon-box"><i class="fa-solid fa-flask"></i></span>
-          <span class="upload-label" data-i18n="zip_demo_label">デモ環境の zip</span>
+          <span class="upload-label">
+            <span class="upload-label-text" data-i18n="zip_demo_label">デモ環境（ZIP）</span>
+            <span class="req-stamp" data-i18n="required_stamp">必須</span>
+          </span>
           <span class="upload-hint" data-i18n="zip_hint_set"></span>
           <span class="upload-filename" id="demoName"></span>
           <button class="file-clear" data-zone="demoZone" data-input="demoInput" data-key="demoZipFile"><i class="fa-solid fa-xmark"></i></button>
@@ -254,7 +268,10 @@
         </div>
         <div class="upload-zone" id="masterZone">
           <span class="upload-icon-box"><i class="fa-solid fa-server"></i></span>
-          <span class="upload-label" data-i18n="zip_master_label">本番環境の zip</span>
+          <span class="upload-label">
+            <span class="upload-label-text" data-i18n="zip_master_label">本番環境（ZIP）</span>
+            <span class="req-stamp" data-i18n="required_stamp">必須</span>
+          </span>
           <span class="upload-hint" data-i18n="zip_hint_set"></span>
           <span class="upload-filename" id="masterName"></span>
           <button class="file-clear" data-zone="masterZone" data-input="masterInput" data-key="masterZipFile"><i class="fa-solid fa-xmark"></i></button>
@@ -289,10 +306,14 @@
     <div class="card-body" id="resultBody">
     <div class="result-summary" id="resultSummary"></div>
 
-    <div class="result-actions">
+    <div class="result-actions download-row">
+      <div class="filename-box">
+        <input type="text" id="downloadName" class="filename-input" spellcheck="false" autocomplete="off">
+        <span class="filename-ext">.md</span>
+      </div>
       <button class="btn-download" id="downloadBtn">
         <i class="fa-solid fa-download"></i>
-        <span data-i18n="download_btn">Markdown レポートをダウンロード</span>
+        <span data-i18n="download_btn">レポートをダウンロード</span>
       </button>
     </div>
 

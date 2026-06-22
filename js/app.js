@@ -20,6 +20,54 @@ const MODE_CHECKS = {
 // Các check cần file IVR Properties (zip phải có ivr-property.md)
 const PROPS_CHECKS = new Set(['api', 'prompt'])
 
+// Cấu hình ô upload theo mode (mode 1 file): label / hint / loại file / icon
+const UPLOAD_MODE = {
+  deploy:   { labelKey: 'up_deploy_label',   hintKey: 'up_deploy_hint', accept: '.zip',  icon: 'fa-file-zipper' },
+  flow:     { labelKey: 'up_flow_label',     hintKey: null,             accept: '.bivr', icon: 'fa-diagram-project' },
+  property: { labelKey: 'up_property_label', hintKey: null,             accept: '.md',   icon: 'fa-sliders' },
+}
+
+// Suy ra môi trường từ nội dung IVR property (khi mode chỉ upload .md)
+function inferEnvFromProps(props) {
+  let demo = 0, master = 0
+  for (const v of Object.values(props || {})) {
+    const s = String(v)
+    if (s.includes('demo-reserve.famishare.jp') || s.includes('10.0.20.11')) demo++
+    else if (s.includes('reserve.drjoy.jp') || s.includes('speech.internal.assistant.com')) master++
+  }
+  if (!demo && !master) return null
+  return demo >= master ? 'demo' : 'master'
+}
+
+function flowsToDetail(flows) {
+  return Object.keys(flows || {}).map(name => ({ name, kind: flowKind(name) }))
+}
+
+// Lấy tên group (phần trước "$" của tên flow) làm tên file báo cáo mặc định
+function deriveGroupName(flows, fallbackName) {
+  const names = Object.keys(flows || {})
+  if (names.length) {
+    const first = names[0]
+    const grp = first.includes('$') ? first.split('$')[0] : first
+    if (grp) return grp
+  }
+  return (fallbackName || 'report').replace(/\.[^.]+$/, '')
+}
+
+// Parse file chính theo mode → cùng định dạng kết quả với parseZipSet
+async function parsePrimary(file, mode) {
+  if (mode === 'property') {
+    const text = await file.text()
+    const props = parseIvrProperties(text)
+    return { bivrName: file.name, flows: {}, propsFiles: [{ name: file.name, text }], detail: { env: inferEnvFromProps(props), flows: [] } }
+  }
+  if (mode === 'flow') {
+    const flows = await parseBivr(file)
+    return { bivrName: file.name, flows, propsFiles: [], detail: { env: null, flows: flowsToDetail(flows) } }
+  }
+  return await parseZipSet(file)
+}
+
 // ── Lang ──────────────────────────────────────────────────────────────────────
 function applyLang(lang) {
   state.lang = lang
@@ -27,6 +75,9 @@ function applyLang(lang) {
   document.documentElement.lang = lang
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = t(el.getAttribute('data-i18n'))
+  })
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.title = t(el.getAttribute('data-i18n-title'))
   })
   document.querySelector('#langBtn span').textContent = t('lang_toggle')
   refreshDetectedBadges()
@@ -82,7 +133,22 @@ function clearFile(stateKey, zoneId, inputId, parsedKey, detectedId) {
   }
 }
 
-// Parse a zip on upload to detect environment + flows, then show a badge
+// Parse the primary upload (mode-aware: zip / .bivr / .md), then show a badge
+async function onPrimaryUpload(file) {
+  const badge = document.getElementById('zipDetected')
+  badge.hidden = false
+  badge.innerHTML = `<span class="detected-loading"><i class="fa-solid fa-spinner fa-spin"></i></span>`
+  try {
+    const result = await parsePrimary(file, state.mode)
+    state.parsed.zip = result
+    renderDetected(badge, result)
+  } catch (err) {
+    state.parsed.zip = null
+    badge.innerHTML = `<span class="detected-err"><i class="fa-solid fa-circle-exclamation"></i> ${err.message}</span>`
+  }
+}
+
+// Parse a compare zip (always a full export zip) to detect env + flows
 async function onZipUpload(file, parsedKey, detectedId) {
   const badge = document.getElementById(detectedId)
   badge.hidden = false
@@ -102,15 +168,18 @@ function renderDetected(badge, result) {
   badge.dataset.env = result.detail.env || ''
   const envText = result.detail.env ? envLabel(result.detail.env) : t('env_unknown')
   const envCls = result.detail.env === 'master' ? 'env-master' : result.detail.env === 'demo' ? 'env-demo' : 'env-unknown'
-  const flows = result.detail.flows
+  const flows = result.detail.flows || []
   const main = flows.filter(f => f.kind === 'main').length
   const sub = flows.filter(f => f.kind === 'sub').length
-  badge.innerHTML = `
-    <span class="detected-pill ${envCls}"><i class="fa-solid fa-server"></i> ${t('detected_env')}: <b>${envText}</b></span>
-    <span class="detected-pill"><i class="fa-solid fa-diagram-project"></i> ${t('detected_flows')}: <b>${flows.length}</b>
-      <span class="detected-sub">(${t('detected_main')} ${main} / ${t('detected_sub')} ${sub})</span></span>
-    <span class="detected-pill"><i class="fa-solid fa-sliders"></i> ${t('detected_props')}: <b>${result.propsFiles.length}</b></span>
-  `
+  let html = `<span class="detected-pill ${envCls}"><i class="fa-solid fa-server"></i> ${t('detected_env')}: <b>${envText}</b></span>`
+  if (flows.length) {
+    html += `<span class="detected-pill"><i class="fa-solid fa-diagram-project"></i> ${t('detected_flows')}: <b>${flows.length}</b>
+      <span class="detected-sub">(${t('detected_main')} ${main} / ${t('detected_sub')} ${sub})</span></span>`
+  }
+  if (result.propsFiles.length) {
+    html += `<span class="detected-pill"><i class="fa-solid fa-sliders"></i> ${t('detected_props')}: <b>${result.propsFiles.length}</b></span>`
+  }
+  badge.innerHTML = html
 }
 
 function refreshDetectedBadges() {
@@ -134,10 +203,32 @@ function applyMode(mode) {
   // Reveal detail area (checks + upload + run)
   document.getElementById('modeDetail').hidden = false
 
-  // Upload layout: one zip, or two zips for compare
+  // Upload layout: one file, or two zips for compare
   const isCompare = mode === 'compare'
   document.getElementById('singleUpload').hidden = isCompare
   document.getElementById('compareUpload').hidden = !isCompare
+
+  // Configure the single-file upload zone for this mode (label / hint / accept / icon)
+  const cfg = UPLOAD_MODE[mode]
+  if (cfg) {
+    const lblText = document.getElementById('zipLabelText')
+    lblText.setAttribute('data-i18n', cfg.labelKey)
+    lblText.textContent = t(cfg.labelKey)
+    const hint = document.getElementById('zipHint')
+    if (cfg.hintKey) {
+      hint.setAttribute('data-i18n', cfg.hintKey)
+      hint.textContent = t(cfg.hintKey)
+      hint.hidden = false
+    } else {
+      hint.removeAttribute('data-i18n')
+      hint.textContent = ''
+      hint.hidden = true
+    }
+    document.getElementById('zipInput').accept = cfg.accept
+    document.getElementById('zipIcon').className = 'fa-solid ' + cfg.icon
+    // File type differs per mode → clear any previously selected primary file
+    clearFile('zipFile', 'zipZone', 'zipInput', 'zip', 'zipDetected')
+  }
 
   // Check options relevant to this mode (default all on)
   const allowed = MODE_CHECKS[mode]
@@ -150,10 +241,15 @@ function applyMode(mode) {
     if (visible) cb.checked = true
   })
 
-  // Hide a category column when it has no visible checks
+  // Hide a category when it has no visible checks
   document.querySelectorAll('#checksGrid .check-cat').forEach(cat => {
     const anyVisible = [...cat.querySelectorAll('.check-label')].some(l => !l.hidden)
     cat.hidden = !anyVisible
+  })
+  // Hide a whole column when all its categories are hidden
+  document.querySelectorAll('#checksGrid .check-col').forEach(col => {
+    const anyVisible = [...col.querySelectorAll('.check-cat')].some(c => !c.hidden)
+    col.hidden = !anyVisible
   })
 
   // Scroll the newly revealed section into view
@@ -242,12 +338,13 @@ async function runChecks() {
         masterEnv: master.detail.env,
         bivrName: demo.bivrName,
         compareName: master.bivrName,
+        groupName: deriveGroupName(demo.flows, demo.bivrName),
         diffIssues,
       }
     } else {
       if (!state.zipFile) return showError(t('err_no_zip'))
       setBusy(true)
-      const set = state.parsed.zip || await parseZipSet(state.zipFile)
+      const set = state.parsed.zip || await parsePrimary(state.zipFile, state.mode)
       state.parsed.zip = set
       const env = set.detail.env
       const wantApi = selected.includes('api')
@@ -285,6 +382,7 @@ async function runChecks() {
         mode: state.mode,
         env,
         bivrName: set.bivrName,
+        groupName: deriveGroupName(set.flows, set.bivrName),
         apiIssues, phoneIssues, jumpIssues,
         promptIssues, ctxrouterIssues, regexIssues,
         openaiIssues, reconfirmIssues, flagIssues, submodIssues,
@@ -292,6 +390,7 @@ async function runChecks() {
     }
 
     rerenderReport()
+    setDownloadName()
     const step3 = document.getElementById('step3')
     step3.hidden = false
     // Auto-collapse the setting card, ensure results are expanded
@@ -347,15 +446,25 @@ function rerenderReport() {
   }
 }
 
+// Default download filename = "<group>_検証レポート"
+function setDownloadName() {
+  const input = document.getElementById('downloadName')
+  if (!input || !state.lastRun) return
+  const grp = state.lastRun.groupName || 'report'
+  input.value = `${grp}_${t('download_suffix')}`
+}
+
 // ── Download report ───────────────────────────────────────────────────────────
 function downloadReport() {
   if (!state.lastReport) return
+  const input = document.getElementById('downloadName')
+  let base = (input.value || '').trim().replace(/\.md$/i, '').trim()
+  if (!base) { showError(t('err_no_filename')); return }
   const blob = new Blob([state.lastReport], { type: 'text/markdown;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
-  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
   a.href = url
-  a.download = `bivr-report-${ts}.md`
+  a.download = base + '.md'
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -369,7 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
   })
 
   // Upload zones
-  setupUploadZone('zipZone', 'zipInput', 'zipFile', f => onZipUpload(f, 'zip', 'zipDetected'))
+  setupUploadZone('zipZone', 'zipInput', 'zipFile', f => onPrimaryUpload(f))
   setupUploadZone('demoZone', 'demoInput', 'demoZipFile', f => onZipUpload(f, 'demo', 'demoDetected'))
   setupUploadZone('masterZone', 'masterInput', 'masterZipFile', f => onZipUpload(f, 'master', 'masterDetected'))
 
@@ -399,6 +508,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const allChecked = cbs.length > 0 && cbs.every(cb => cb.checked)
     cbs.forEach(cb => { cb.checked = !allChecked })
     syncCheckAllBtn()
+  })
+
+  // Per-group select-all / deselect-all toggle
+  document.querySelectorAll('.cat-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cat = btn.closest('.check-cat')
+      const cbs = [...cat.querySelectorAll('.check-input:not(:disabled)')]
+        .filter(cb => !cb.closest('.check-label').hidden)
+      if (!cbs.length) return
+      const allChecked = cbs.every(cb => cb.checked)
+      cbs.forEach(cb => { cb.checked = !allChecked })
+      syncCheckAllBtn()
+    })
   })
 
   // Keep the check-all button label in sync when individual checks change
