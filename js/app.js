@@ -155,6 +155,8 @@ function applyMode(mode) {
 
   // Scroll the newly revealed section into view
   document.getElementById('modeDetail').scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+
+  syncCheckAllBtn()
 }
 
 // ── Collapsible cards ───────────────────────────────────────────────────────--
@@ -184,6 +186,21 @@ function toggleCollapsed(target) {
 // ── Checks state ──────────────────────────────────────────────────────────────
 function getSelectedChecks() {
   return [...document.querySelectorAll('#checksGrid .check-input:checked:not(:disabled)')].map(cb => cb.value)
+}
+
+function getToggleableChecks() {
+  return [...document.querySelectorAll('#checksGrid .check-input:not(:disabled)')]
+    .filter(cb => !cb.closest('.check-label').hidden)
+}
+
+// Reflect current checkbox state in the check-all button label
+function syncCheckAllBtn() {
+  const cbs = getToggleableChecks()
+  const allChecked = cbs.length > 0 && cbs.every(cb => cb.checked)
+  const b = document.getElementById('checkAllBtn')
+  const key = allChecked ? 'check_none' : 'check_all'
+  b.setAttribute('data-i18n', key)
+  b.textContent = t(key)
 }
 
 // ── Error message ─────────────────────────────────────────────────────────────
@@ -353,13 +370,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Check-all toggle
   document.getElementById('checkAllBtn').addEventListener('click', () => {
-    const cbs = [...document.querySelectorAll('#checksGrid .check-input:not(:disabled)')]
-      .filter(cb => !cb.closest('.check-label').hidden)
-    const allChecked = cbs.every(cb => cb.checked)
+    const cbs = getToggleableChecks()
+    const allChecked = cbs.length > 0 && cbs.every(cb => cb.checked)
     cbs.forEach(cb => { cb.checked = !allChecked })
-    const b = document.getElementById('checkAllBtn')
-    b.setAttribute('data-i18n', allChecked ? 'check_all' : 'check_none')
-    b.textContent = t(allChecked ? 'check_all' : 'check_none')
+    syncCheckAllBtn()
+  })
+
+  // Keep the check-all button label in sync when individual checks change
+  document.querySelectorAll('#checksGrid .check-input').forEach(cb => {
+    cb.addEventListener('change', syncCheckAllBtn)
   })
 
   document.getElementById('runBtn').addEventListener('click', runChecks)
