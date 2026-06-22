@@ -1,7 +1,17 @@
 // ── Markdown report generator (bilingual) ────────────────────────────────────
 const SEV_EMOJI = { ERROR: '🔴', WARNING: '🟡', INFO: '🔵' }
+const _FLOW_SEP = ' ／ '
+const _JUMP_NOTE_KEY = {
+  ok: 'jump_note_ok',
+  invalid: 'jump_note_invalid',
+  empty: 'jump_note_empty',
+  empty_subflow: 'jump_note_empty_subflow',
+}
 
 function _t(key) { return t(key) }
+function _fmtFlow(name) {
+  return name ? name.replace(/\$/g, _FLOW_SEP) : ''
+}
 
 function _renderApiSection(issues, envLabel) {
   const lines = [`## ${_t('sec_api')}`, '']
@@ -34,7 +44,7 @@ function _renderPhoneSection(issues) {
     lines.push('|---|---|---|---|')
     for (const i of transfers) {
       const note = i.isTest ? _t('test_flag') : ''
-      lines.push(`| \`${i.flow}\` | \`${i.module}\` | \`${i.number}\` | ${note} |`)
+      lines.push(`| \`${_fmtFlow(i.flow)}\` | \`${i.module}\` | \`${i.number}\` | ${note} |`)
     }
     lines.push('')
   } else {
@@ -48,7 +58,7 @@ function _renderPhoneSection(issues) {
       const e = SEV_EMOJI[i.severity] || '⚪'
       const lbl = _t('sev_' + i.severity.toLowerCase())
       lines.push(
-        `### ${e} ${lbl} — Flow: \`${i.flow}\``, '',
+        `### ${e} ${lbl} — Flow: \`${_fmtFlow(i.flow)}\``, '',
         `- **${_t('lbl_module')}**: \`${i.module}\``,
         `- **${_t('lbl_number')}**: \`${i.number}\``,
         `- **${_t('lbl_desc')}**: ${_t('type_' + _typeKey(i.type))}`,
@@ -61,21 +71,38 @@ function _renderPhoneSection(issues) {
 
 function _renderJumpSection(issues) {
   const lines = [`## ${_t('sec_jump')}`, '']
-  if (!issues.length) {
-    lines.push(`🟢 ${_t('jump_ok')}`, '')
-    return lines
+  const jumpModules = issues.filter(i => i.type === 'jump_module')
+  const problems = issues.filter(i => i.type === 'empty_jump_target' || i.type === 'invalid_jump_target')
+
+  if (jumpModules.length) {
+    lines.push(`### ${_t('jump_tbl_header')}`, '')
+    lines.push(`| ${_t('col_flow')} | ${_t('col_module')} | ${_t('col_jump_target')} | ${_t('col_note')} |`)
+    lines.push('|---|---|---|---|')
+    for (const i of jumpModules) {
+      const target = i.target ? `\`${_fmtFlow(i.target)}\`` : `(${_t('jump_no_target')})`
+      const note = _t(_JUMP_NOTE_KEY[i.status] || 'jump_note_ok')
+      lines.push(`| \`${_fmtFlow(i.flow)}\` | \`${i.module}\` | ${target} | ${note} |`)
+    }
+    lines.push('')
+  } else {
+    lines.push(`🟢 ${_t('jump_no_modules')}`, '')
   }
-  for (const i of issues) {
-    const e = SEV_EMOJI[i.severity] || '⚪'
-    const lbl = _t('sev_' + i.severity.toLowerCase())
-    const subNote = (i.type === 'empty_jump_target' && i.severity === 'WARNING') ? ' ' + _t('subflow_note') : ''
-    const targetNote = i.target ? ` — ${_t('lbl_target')}: \`${i.target}\`` : ''
-    lines.push(
-      `### ${e} ${lbl} — Flow: \`${i.flow}\``, '',
-      `- **${_t('lbl_module')}**: \`${i.module}\``,
-      `- **${_t('lbl_desc')}**: ${_t('type_' + _typeKey(i.type))}${targetNote}${subNote}`,
-      '',
-    )
+
+  if (!problems.length) {
+    lines.push(`🟢 ${_t('jump_ok')}`, '')
+  } else {
+    for (const i of problems) {
+      const e = SEV_EMOJI[i.severity] || '⚪'
+      const lbl = _t('sev_' + i.severity.toLowerCase())
+      const subNote = (i.type === 'empty_jump_target' && i.severity === 'WARNING') ? ' ' + _t('subflow_note') : ''
+      const targetNote = i.target ? ` — ${_t('lbl_target')}: \`${_fmtFlow(i.target)}\`` : ''
+      lines.push(
+        `### ${e} ${lbl} — Flow: \`${_fmtFlow(i.flow)}\``, '',
+        `- **${_t('lbl_module')}**: \`${i.module}\``,
+        `- **${_t('lbl_desc')}**: ${_t('type_' + _typeKey(i.type))}${targetNote}${subNote}`,
+        '',
+      )
+    }
   }
   return lines
 }
@@ -96,7 +123,7 @@ function _renderDiffSection(issues, compareName, baseEnvLabel, newEnvLabel) {
     byFlow[i.flow].push(i)
   }
   for (const [flow, flowIssues] of Object.entries(byFlow)) {
-    lines.push(`### Flow: \`${flow}\``, '')
+    lines.push(`### Flow: \`${_fmtFlow(flow)}\``, '')
     for (const i of flowIssues) {
       const e = SEV_EMOJI[i.severity] || '⚪'
       const desc = _t('type_' + _typeKey(i.type))
@@ -115,6 +142,7 @@ function _typeKey(type) {
     transfer_number: 'transfer_number',
     test_number_in_transfer: 'test_in_transfer',
     test_number_in_prompt: 'test_in_prompt',
+    jump_module: 'jump_module',
     empty_jump_target: 'empty_jump',
     invalid_jump_target: 'invalid_jump',
     flow_removed: 'flow_removed',
