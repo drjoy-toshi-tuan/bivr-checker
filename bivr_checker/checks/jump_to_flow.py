@@ -1,6 +1,6 @@
 """
-Kiểm tra tính nhất quán của Jump to Flow — tên flow đích có tồn tại không,
-và module Jump to Flow chưa được cài đặt đích (flowname rỗng).
+Kiểm tra module 「Jump To Flow」 — liệt kê tất cả module Jump to Flow trong mọi flow,
+và kiểm tra tên flow đích (ジャンプ先) có tồn tại không.
 Subflow (tên chứa S｜, サブ｜, サブ, Sub...) được phép có flowname rỗng → WARNING, không phải ERROR.
 """
 from typing import List, Dict
@@ -27,7 +27,18 @@ def check_jump_to_flow(flows: dict) -> List[Dict]:
 
             if not flowname:
                 # Subflow không có đích jump là có chủ đích → WARNING
-                severity = "WARNING" if _is_subflow(flow_name) else "ERROR"
+                is_sub = _is_subflow(flow_name)
+                severity = "WARNING" if is_sub else "ERROR"
+                status = "empty_subflow" if is_sub else "empty"
+                # Luôn ghi nhận module Jump to Flow (INFO)
+                issues.append({
+                    "type": "jump_module",
+                    "severity": "INFO",
+                    "flow": flow_name,
+                    "module": mod_name,
+                    "target": None,
+                    "status": status,
+                })
                 issues.append({
                     "type": "empty_jump_target",
                     "severity": severity,
@@ -39,7 +50,17 @@ def check_jump_to_flow(flows: dict) -> List[Dict]:
 
             # flowname có dạng "drjoy^<tên flow thực>"
             target = flowname[len("drjoy^"):] if flowname.startswith("drjoy^") else flowname
-            if target not in flow_names:
+            valid = target in flow_names
+            # Luôn ghi nhận module Jump to Flow (INFO)
+            issues.append({
+                "type": "jump_module",
+                "severity": "INFO",
+                "flow": flow_name,
+                "module": mod_name,
+                "target": target,
+                "status": "ok" if valid else "invalid",
+            })
+            if not valid:
                 issues.append({
                     "type": "invalid_jump_target",
                     "severity": "ERROR",
