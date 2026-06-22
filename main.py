@@ -123,9 +123,10 @@ def main():
     jump_issues = None
     if "jump" in selected:
         jump_issues = check_jump_to_flow(flows)
+        modules = sum(1 for i in jump_issues if i.get("type") == "jump_module")
         errors = sum(1 for i in jump_issues if i.get("severity") == "ERROR")
         warnings = sum(1 for i in jump_issues if i.get("severity") == "WARNING")
-        print(f"  Jump to Flow  : {errors} lỗi, {warnings} cảnh báo")
+        print(f"  Jump to Flow  : {modules} module tìm thấy, {errors} lỗi, {warnings} cảnh báo")
 
     diff_issues = None
     if "diff" in selected and args.compare:

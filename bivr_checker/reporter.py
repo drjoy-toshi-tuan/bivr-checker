@@ -5,6 +5,16 @@ from typing import List, Dict, Optional
 _EMOJI = {"ERROR": "🔴", "WARNING": "🟡", "INFO": "🔵", "OK": "🟢"}
 _LABEL = {"ERROR": "LỖI", "WARNING": "CẢNH BÁO", "INFO": "THÔNG TIN"}
 
+# Ký hiệu ngăn giữa tên group và flow khi hiển thị
+_FLOW_SEP = " ／ "
+
+
+def _fmt_flow(name: Optional[str]) -> str:
+    """Hiển thị tên flow: thay dấu '$' ngăn group/flow bằng ' ／ '."""
+    if not name:
+        return ""
+    return name.replace("$", _FLOW_SEP)
+
 _TYPE_VI = {
     # api_url
     "missing_field": "Field bị thiếu trong IVR Properties",
@@ -14,8 +24,9 @@ _TYPE_VI = {
     "test_number_in_transfer": "Số test được dùng làm số chuyển tiếp (転送先)",
     "test_number_in_prompt": "Số test xuất hiện trong TTS prompt",
     # jump_to_flow
-    "empty_jump_target": "Jump to Flow chưa cài đặt đích (flowname rỗng)",
-    "invalid_jump_target": "Jump to Flow trỏ đến flow không tồn tại",
+    "jump_module": "Module Jump To Flow",
+    "empty_jump_target": "Jump To Flow chưa cài đặt đích (flowname rỗng)",
+    "invalid_jump_target": "Jump To Flow trỏ đến flow không tồn tại",
     # diff
     "flow_removed": "Flow bị xóa so với bản hiện hành",
     "flow_added": "Flow mới được thêm",
@@ -25,6 +36,15 @@ _TYPE_VI = {
     "module_type_changed": "Loại module (type) thay đổi",
     "module_params_changed": "Tham số module (params) thay đổi",
     "module_transitions_changed": "Cài đặt chuyển tiếp (next) thay đổi",
+}
+
+
+# 備考 (Ghi chú) cho từng trạng thái module Jump To Flow
+_JUMP_NOTE = {
+    "ok": "🟢 Hợp lệ",
+    "invalid": "🔴 Flow đích không tồn tại",
+    "empty": "🔴 Chưa cài đặt flow đích",
+    "empty_subflow": "🟡 Subflow — chưa đặt đích (có chủ đích)",
 }
 
 
@@ -56,7 +76,8 @@ def _render_api_issues(issues: List[Dict], env_label: str) -> List[str]:
 
 
 def _render_phone_issues(issues: List[Dict]) -> List[str]:
-    lines = _section_header("Kiểm tra số điện thoại chuyển tiếp (転送先番号)")
+    # 「転送」モジュール検証 — Kiểm tra module [Nối Máy]
+    lines = _section_header("「転送」モジュール検証 — Kiểm tra module [Nối Máy]")
 
     transfer_numbers = [i for i in issues if i.get("type") == "transfer_number"]
     warnings = [i for i in issues if i.get("severity") == "WARNING"]
@@ -64,13 +85,13 @@ def _render_phone_issues(issues: List[Dict]) -> List[str]:
     # Bảng tất cả số điện thoại chuyển tiếp
     if transfer_numbers:
         lines += ["### Danh sách số điện thoại chuyển tiếp trong BIVR", ""]
-        lines += ["| Flow | Module | Số điện thoại | Ghi chú |", "|---|---|---|---|"]
+        lines += ["| Flow | Module | Số điện thoại (転送先) | 備考 (Ghi chú) |", "|---|---|---|---|"]
         for i in transfer_numbers:
             note = "⚠️ Số test" if i.get("is_test") else ""
-            lines.append(f"| `{i['flow']}` | `{i['module']}` | `{i['number']}` | {note} |")
+            lines.append(f"| `{_fmt_flow(i['flow'])}` | `{i['module']}` | `{i['number']}` | {note} |")
         lines.append("")
     else:
-        lines += ["🟢 Không có module chuyển tiếp nào trong BIVR.", ""]
+        lines += ["🟢 Không tồn tại module 「転送」 (Nối Máy) trong BIVR.", ""]
 
     # Cảnh báo số test
     if not warnings:
@@ -80,7 +101,7 @@ def _render_phone_issues(issues: List[Dict]) -> List[str]:
             e = _EMOJI.get(i["severity"], "⚪")
             lbl = _LABEL.get(i["severity"], "")
             lines += [
-                f"### {e} {lbl} — Flow: `{i['flow']}`",
+                f"### {e} {lbl} — Flow: `{_fmt_flow(i['flow'])}`",
                 "",
                 f"- **Module**: `{i['module']}`",
                 f"- **Số điện thoại**: `{i['number']}`",
@@ -91,21 +112,39 @@ def _render_phone_issues(issues: List[Dict]) -> List[str]:
 
 
 def _render_jump_issues(issues: List[Dict]) -> List[str]:
-    lines = _section_header("Kiểm tra Jump to Flow")
-    if not issues:
-        lines += ["🟢 Tất cả cài đặt Jump to Flow đều hợp lệ.", ""]
-        return lines
-    for i in issues:
-        e = _EMOJI.get(i["severity"], "⚪")
-        lbl = _LABEL.get(i["severity"], "")
-        detail = f" → Flow đích: `{i['target']}`" if i.get("target") else ""
-        lines += [
-            f"### {e} {lbl} — Flow: `{i['flow']}`",
-            "",
-            f"- **Module**: `{i['module']}`",
-            f"- **Mô tả**: {_TYPE_VI.get(i['type'], i['type'])}{detail}",
-            "",
-        ]
+    # 「Jump To Flow」モジュール検証 — Kiểm tra module [Jump To Flow]
+    lines = _section_header("「Jump To Flow」モジュール検証 — Kiểm tra module [Jump To Flow]")
+
+    jump_modules = [i for i in issues if i.get("type") == "jump_module"]
+    problems = [i for i in issues if i.get("type") in ("empty_jump_target", "invalid_jump_target")]
+
+    # Bảng tất cả module Jump To Flow
+    if jump_modules:
+        lines += ["### Danh sách module Jump To Flow trong BIVR", ""]
+        lines += ["| Flow | Module | ジャンプ先 (Flow đích) | 備考 (Ghi chú) |", "|---|---|---|---|"]
+        for i in jump_modules:
+            target = f"`{_fmt_flow(i['target'])}`" if i.get("target") else "(chưa cài đặt)"
+            note = _JUMP_NOTE.get(i.get("status"), "")
+            lines.append(f"| `{_fmt_flow(i['flow'])}` | `{i['module']}` | {target} | {note} |")
+        lines.append("")
+    else:
+        lines += ["🟢 Không tồn tại module 「Jump To Flow」 trong BIVR.", ""]
+
+    # Chi tiết lỗi / cảnh báo
+    if not problems:
+        lines += ["🟢 Tất cả cài đặt Jump To Flow đều hợp lệ.", ""]
+    else:
+        for i in problems:
+            e = _EMOJI.get(i["severity"], "⚪")
+            lbl = _LABEL.get(i["severity"], "")
+            detail = f" → Flow đích: `{_fmt_flow(i['target'])}`" if i.get("target") else ""
+            lines += [
+                f"### {e} {lbl} — Flow: `{_fmt_flow(i['flow'])}`",
+                "",
+                f"- **Module**: `{i['module']}`",
+                f"- **Mô tả**: {_TYPE_VI.get(i['type'], i['type'])}{detail}",
+                "",
+            ]
     return lines
 
 
@@ -121,7 +160,7 @@ def _render_diff_issues(issues: List[Dict], base_path: str) -> List[str]:
         by_flow.setdefault(i["flow"], []).append(i)
 
     for flow, flow_issues in by_flow.items():
-        lines += [f"### Flow: `{flow}`", ""]
+        lines += [f"### Flow: `{_fmt_flow(flow)}`", ""]
         for i in flow_issues:
             e = _EMOJI.get(i["severity"], "⚪")
             desc = _TYPE_VI.get(i["type"], i["type"])
