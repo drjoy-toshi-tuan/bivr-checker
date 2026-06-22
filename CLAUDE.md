@@ -37,7 +37,7 @@ Kết hợp nhiều phần:
 python main.py "<path/to/file.bivr>" <master|demo> --props "<path/to/ivr.properties>" --only api phone jump
 ```
 
-**Tùy chọn --only:** `api`, `phone`, `jump`, `diff`, `prompt`, `ctxrouter`, `regex`, `openai`, `reconfirm`, `flag`
+**Tùy chọn --only:** `api`, `phone`, `jump`, `diff`, `prompt`, `ctxrouter`, `regex`, `openai`, `reconfirm`, `flag`, `submod`
 - `api`: Kiểm tra API URL trong IVR Properties (cần `--props`)
 - `phone`: Kiểm tra số điện thoại chuyển tiếp (liệt kê tất cả số, cảnh báo số test)
 - `jump`: Kiểm tra Jump to Flow (tên flow đích có tồn tại không)
@@ -48,8 +48,9 @@ python main.py "<path/to/file.bivr>" <master|demo> --props "<path/to/ivr.propert
 - `openai`: Kiểm tra generate_by_OpenAI — `module` input hợp lệ (không rỗng/`module`/không tồn tại), cảnh báo trùng module input, cảnh báo thiếu catch-all `^.*$`/`^.+$`.
 - `reconfirm`: Kiểm tra Re-confirmation node data — object `<%...%>` đã tạo chưa; `#data#` thì `nodeName` phải tồn tại trong flow.
 - `flag`: Kiểm tra saveCompletionFlag2db — `status`/`smsFlag` bị để trống (WARNING).
+- `submod`: Kiểm tra sub-module (`subs`) của STT/DTMF (AmiVoice/Soniox Speech to Text, DTMF Custom, DTMF AmiVoice STT Input) — `label` phải bắt đầu bằng `save-` hoặc `rag-` (sai = ERROR); `moduleName` rỗng = chưa nối (WARNING).
 
-**Phân loại:** `prompt` là loại **hỗn hợp (mix)** cần cả Property + Flow; `ctxrouter`/`regex`/`openai`/`reconfirm`/`flag` chỉ cần Flow.
+**Phân loại:** `prompt` là loại **hỗn hợp (mix)** cần cả Property + Flow; `ctxrouter`/`regex`/`openai`/`reconfirm`/`flag`/`submod` chỉ cần Flow.
 
 **Môi trường:**
 - `master` = 本番（本番環境）

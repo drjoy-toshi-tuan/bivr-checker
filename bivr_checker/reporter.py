@@ -57,6 +57,9 @@ _TYPE_VI = {
     # completion flag
     "flag_status_empty": "saveCompletionFlag2db: 'status' đang để trống",
     "flag_sms_empty": "saveCompletionFlag2db: 'smsFlag' đang để trống",
+    # sub-module (STT/DTMF)
+    "sub_label_syntax": "Sub-module label sai cú pháp (cần bắt đầu bằng save- hoặc rag-)",
+    "sub_not_connected": "Sub-module chưa được nối (moduleName rỗng)",
 }
 
 
@@ -200,6 +203,8 @@ def _issue_detail(i: Dict) -> str:
         parts.append(f"giá trị: `{i['ref']}`")
     if i.get("node"):
         parts.append(f"nodeName: `{i['node']}`")
+    if i.get("label"):
+        parts.append(f"label: `{i['label']}`")
     if i.get("slot"):
         parts.append(f"vị trí: `{i['slot']}`")
     if i.get("field") and i["type"] not in ("prop_prompt_no_module",):
@@ -266,6 +271,7 @@ def generate_report(
     openai_issues: Optional[List[Dict]] = None,
     reconfirm_issues: Optional[List[Dict]] = None,
     flag_issues: Optional[List[Dict]] = None,
+    submod_issues: Optional[List[Dict]] = None,
     base_bivr_path: Optional[str] = None,
 ) -> str:
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -276,6 +282,7 @@ def generate_report(
         (api_issues or []) + (phone_issues or []) + (jump_issues or []) + (diff_issues or [])
         + (prompt_issues or []) + (ctxrouter_issues or []) + (regex_issues or [])
         + (openai_issues or []) + (reconfirm_issues or []) + (flag_issues or [])
+        + (submod_issues or [])
     )
     total_errors = _count(all_issues, "ERROR")
     total_warnings = _count(all_issues, "WARNING")
@@ -347,6 +354,12 @@ def generate_report(
             "Kiểm tra saveCompletionFlag2db",
             flag_issues,
             "Tất cả saveCompletionFlag2db đều có status và smsFlag.",
+        ))
+    if submod_issues is not None:
+        sections.append(_render_generic_section(
+            "Kiểm tra Sub-module (STT / DTMF) — label & kết nối",
+            submod_issues,
+            "Tất cả sub-module đều đúng cú pháp (save-/rag-) và đã được nối.",
         ))
     if diff_issues is not None and base_bivr_path:
         sections.append(_render_diff_issues(diff_issues, base_bivr_path))

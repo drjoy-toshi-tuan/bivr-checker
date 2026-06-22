@@ -169,6 +169,11 @@ const I18N = {
     type_reconfirm_nodename_missing: '#data# を使用しているが nodeName がフローに存在しません',
     type_flag_status_empty: "saveCompletionFlag2db: 'status' が空です",
     type_flag_sms_empty: "saveCompletionFlag2db: 'smsFlag' が空です",
+    check_submod: 'サブモジュール チェック',
+    sec_submod: 'サブモジュール（STT / DTMF）— ラベルと接続',
+    submod_ok: 'すべてのサブモジュールが正しい構文（save-/rag-）で接続済みです。',
+    type_sub_label_syntax: 'サブモジュールのラベル構文エラー（save- または rag- で始まる必要があります）',
+    type_sub_not_connected: 'サブモジュールが接続されていません（moduleName が空）',
   },
   vi: {
     app_title: 'BIVR Checker',
@@ -340,6 +345,11 @@ const I18N = {
     type_reconfirm_nodename_missing: 'Dùng #data# nhưng nodeName không tồn tại trong flow',
     type_flag_status_empty: "saveCompletionFlag2db: 'status' đang để trống",
     type_flag_sms_empty: "saveCompletionFlag2db: 'smsFlag' đang để trống",
+    check_submod: 'Kiểm tra Sub-module',
+    sec_submod: 'Kiểm tra Sub-module (STT / DTMF) — label & kết nối',
+    submod_ok: 'Tất cả sub-module đều đúng cú pháp (save-/rag-) và đã được nối.',
+    type_sub_label_syntax: 'Sub-module label sai cú pháp (cần bắt đầu bằng save- hoặc rag-)',
+    type_sub_not_connected: 'Sub-module chưa được nối (moduleName rỗng)',
   },
 }
 

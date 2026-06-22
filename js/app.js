@@ -11,8 +11,8 @@ const state = {
 
 // Which checks belong to which mode
 const MODE_CHECKS = {
-  deploy: ['api', 'phone', 'jump', 'prompt', 'ctxrouter', 'regex', 'openai', 'reconfirm', 'flag'],
-  flow: ['phone', 'jump', 'ctxrouter', 'regex', 'openai', 'reconfirm', 'flag'],
+  deploy: ['api', 'phone', 'jump', 'prompt', 'ctxrouter', 'regex', 'openai', 'reconfirm', 'flag', 'submod'],
+  flow: ['phone', 'jump', 'ctxrouter', 'regex', 'openai', 'reconfirm', 'flag', 'submod'],
   property: ['api'],
   compare: ['diff'],
 }
@@ -258,7 +258,7 @@ async function runChecks() {
 
       let apiIssues = null, phoneIssues = null, jumpIssues = null
       let promptIssues = null, ctxrouterIssues = null, regexIssues = null
-      let openaiIssues = null, reconfirmIssues = null, flagIssues = null
+      let openaiIssues = null, reconfirmIssues = null, flagIssues = null, submodIssues = null
 
       if (wantApi) {
         apiIssues = []
@@ -279,6 +279,7 @@ async function runChecks() {
       if (selected.includes('openai')) openaiIssues = checkOpenaiModule(set.flows)
       if (selected.includes('reconfirm')) reconfirmIssues = checkReconfirm(set.flows)
       if (selected.includes('flag')) flagIssues = checkCompletionFlag(set.flows)
+      if (selected.includes('submod')) submodIssues = checkSubModule(set.flows)
 
       state.lastRun = {
         mode: state.mode,
@@ -286,7 +287,7 @@ async function runChecks() {
         bivrName: set.bivrName,
         apiIssues, phoneIssues, jumpIssues,
         promptIssues, ctxrouterIssues, regexIssues,
-        openaiIssues, reconfirmIssues, flagIssues,
+        openaiIssues, reconfirmIssues, flagIssues, submodIssues,
       }
     }
 
@@ -316,6 +317,7 @@ function rerenderReport() {
     ...(r.apiIssues || []), ...(r.phoneIssues || []), ...(r.jumpIssues || []), ...(r.diffIssues || []),
     ...(r.promptIssues || []), ...(r.ctxrouterIssues || []), ...(r.regexIssues || []),
     ...(r.openaiIssues || []), ...(r.reconfirmIssues || []), ...(r.flagIssues || []),
+    ...(r.submodIssues || []),
   ]
   const errors = all.filter(i => i.severity === 'ERROR').length
   const warnings = all.filter(i => i.severity === 'WARNING').length

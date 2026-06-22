@@ -526,3 +526,29 @@ function checkCompletionFlag(flows) {
   }
   return issues
 }
+
+// ── Check #7 (FLOW): Sub-module STT/DTMF — label & kết nối ─────────────────────
+const STT_DTMF_MODULES = new Set([
+  'drjoy^AmiVoice$Speech to Text',
+  'drjoy^External Integration$DTMF Custom',
+  'drjoy^External Integration$DTMF AmiVoice STT Input',
+  'drjoy^Soniox$Speech to Text',
+])
+function checkSubModule(flows) {
+  const issues = []
+  for (const [flowName, flow] of Object.entries(flows)) {
+    for (const [modName, mod] of Object.entries(flow.modules || {})) {
+      if (!STT_DTMF_MODULES.has(mod.type)) continue
+      for (const sub of mod.subs || []) {
+        const label = (sub.label || '').trim()
+        const target = (sub.moduleName || '').trim()
+        if (!label) continue
+        if (!(label.startsWith('save-') || label.startsWith('rag-')))
+          issues.push({ type: 'sub_label_syntax', severity: 'ERROR', flow: flowName, module: modName, label })
+        if (!target)
+          issues.push({ type: 'sub_not_connected', severity: 'WARNING', flow: flowName, module: modName, label })
+      }
+    }
+  }
+  return issues
+}

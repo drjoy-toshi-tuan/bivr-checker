@@ -31,11 +31,12 @@ from bivr_checker.checks.regex_space import check_regex_space
 from bivr_checker.checks.openai_module import check_openai_module
 from bivr_checker.checks.reconfirm import check_reconfirm
 from bivr_checker.checks.completion_flag import check_completion_flag
+from bivr_checker.checks.sub_module import check_sub_module
 from bivr_checker.reporter import generate_report
 
 ALL_CHECKS = {
     "api", "phone", "jump",
-    "prompt", "ctxrouter", "regex", "openai", "reconfirm", "flag",
+    "prompt", "ctxrouter", "regex", "openai", "reconfirm", "flag", "submod",
 }
 # Các check cần file IVR Properties
 PROPS_CHECKS = {"api", "prompt"}
@@ -57,6 +58,7 @@ def main():
             "  openai    — Kiểm tra generate_by_OpenAI (module input + catch-all fallback)\n"
             "  reconfirm — Kiểm tra Re-confirmation node data (object / #data# / nodeName)\n"
             "  flag      — Kiểm tra saveCompletionFlag2db (status / smsFlag rỗng)\n"
+            "  submod    — Kiểm tra sub-module STT/DTMF (label save-/rag-, đã nối chưa)\n"
             "\nVí dụ:\n"
             "  python main.py file.bivr master --props ivr.properties\n"
             "  python main.py file.bivr master --only phone\n"
@@ -87,12 +89,12 @@ def main():
         nargs="+",
         choices=[
             "api", "phone", "jump", "diff",
-            "prompt", "ctxrouter", "regex", "openai", "reconfirm", "flag",
+            "prompt", "ctxrouter", "regex", "openai", "reconfirm", "flag", "submod",
         ],
         metavar="CHECK",
         help=(
             "Chỉ chạy check được chỉ định: api, phone, jump, diff, "
-            "prompt, ctxrouter, regex, openai, reconfirm, flag (mặc định: tất cả)"
+            "prompt, ctxrouter, regex, openai, reconfirm, flag, submod (mặc định: tất cả)"
         ),
         default=None,
     )
@@ -200,6 +202,12 @@ def main():
         e, w = _ew(flag_issues)
         print(f"  CompletionFlag: {e} lỗi, {w} cảnh báo")
 
+    submod_issues = None
+    if "submod" in selected:
+        submod_issues = check_sub_module(flows)
+        e, w = _ew(submod_issues)
+        print(f"  Sub-module    : {e} lỗi, {w} cảnh báo")
+
     print("Đang tạo báo cáo Markdown...")
     report = generate_report(
         bivr_path=args.bivr,
@@ -214,6 +222,7 @@ def main():
         openai_issues=openai_issues,
         reconfirm_issues=reconfirm_issues,
         flag_issues=flag_issues,
+        submod_issues=submod_issues,
         base_bivr_path=args.compare,
     )
 
@@ -225,6 +234,7 @@ def main():
         (api_issues or []) + (phone_issues or []) + (jump_issues or []) + (diff_issues or [])
         + (prompt_issues or []) + (ctxrouter_issues or []) + (regex_issues or [])
         + (openai_issues or []) + (reconfirm_issues or []) + (flag_issues or [])
+        + (submod_issues or [])
     )
     total_errors = sum(1 for i in all_issues if i.get("severity") == "ERROR")
     total_warnings = sum(1 for i in all_issues if i.get("severity") == "WARNING")

@@ -169,6 +169,7 @@ function _issueDetail(i) {
   if (i.object) parts.push(`object: \`<%${i.object}%>\``)
   if (i.ref) parts.push(`${_t('lbl_value')}: \`${i.ref}\``)
   if (i.node) parts.push(`nodeName: \`${i.node}\``)
+  if (i.label) parts.push(`label: \`${i.label}\``)
   if (i.slot) parts.push(`${_t('lbl_slot')}: \`${i.slot}\``)
   if (i.field && i.type !== 'prop_prompt_no_module') parts.push(`field: \`${i.field}\``)
   if (i.condition) parts.push(`regex: \`${i.condition}\``)
@@ -225,7 +226,7 @@ function generateReport(opts) {
     bivrName, compareName = null, env, demoEnv = null, masterEnv = null,
     apiIssues = null, phoneIssues = null, jumpIssues = null, diffIssues = null,
     promptIssues = null, ctxrouterIssues = null, regexIssues = null,
-    openaiIssues = null, reconfirmIssues = null, flagIssues = null,
+    openaiIssues = null, reconfirmIssues = null, flagIssues = null, submodIssues = null,
   } = opts
   const envText = envLabel(env)
   const now = new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
@@ -234,6 +235,7 @@ function generateReport(opts) {
     ...(apiIssues || []), ...(phoneIssues || []), ...(jumpIssues || []), ...(diffIssues || []),
     ...(promptIssues || []), ...(ctxrouterIssues || []), ...(regexIssues || []),
     ...(openaiIssues || []), ...(reconfirmIssues || []), ...(flagIssues || []),
+    ...(submodIssues || []),
   ]
   const totalErrors = all.filter(i => i.severity === 'ERROR').length
   const totalWarnings = all.filter(i => i.severity === 'WARNING').length
@@ -264,6 +266,7 @@ function generateReport(opts) {
   if (openaiIssues !== null) sections.push(_renderGenericSection(_t('sec_openai'), openaiIssues, _t('openai_ok')))
   if (reconfirmIssues !== null) sections.push(_renderGenericSection(_t('sec_reconfirm'), reconfirmIssues, _t('reconfirm_ok')))
   if (flagIssues !== null) sections.push(_renderGenericSection(_t('sec_flag'), flagIssues, _t('flag_ok')))
+  if (submodIssues !== null) sections.push(_renderGenericSection(_t('sec_submod'), submodIssues, _t('submod_ok')))
   if (diffIssues !== null) sections.push(_renderDiffSection(diffIssues, compareName || '', envLabel(masterEnv), envLabel(demoEnv)))
 
   for (let i = 0; i < sections.length; i++) {
