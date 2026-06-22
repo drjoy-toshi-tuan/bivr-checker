@@ -80,8 +80,11 @@ function _renderJumpSection(issues) {
   return lines
 }
 
-function _renderDiffSection(issues, compareName) {
+function _renderDiffSection(issues, compareName, baseEnvLabel, newEnvLabel) {
   const lines = [`## ${_t('sec_diff')}`, '']
+  if (baseEnvLabel && newEnvLabel) {
+    lines.push(`**${baseEnvLabel} → ${newEnvLabel}**`, '')
+  }
   lines.push(`**${_t('diff_compare_file')}**: \`${compareName}\``, '')
   if (!issues.length) {
     lines.push(`🟢 ${_t('diff_ok')}`, '')
@@ -126,8 +129,18 @@ function _typeKey(type) {
   return map[type] || type
 }
 
-function generateReport(bivrName, compareName, env, apiIssues, phoneIssues, jumpIssues, diffIssues) {
-  const envLabel = env === 'master' ? '本番 (Master)' : 'デモ (Demo)'
+function envLabel(env) {
+  if (env === 'master') return _t('env_master')
+  if (env === 'demo') return _t('env_demo')
+  return _t('env_unknown')
+}
+
+function generateReport(opts) {
+  const {
+    bivrName, compareName = null, env, demoEnv = null, masterEnv = null,
+    apiIssues = null, phoneIssues = null, jumpIssues = null, diffIssues = null,
+  } = opts
+  const envText = envLabel(env)
   const now = new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
 
   const all = [...(apiIssues || []), ...(phoneIssues || []), ...(jumpIssues || []), ...(diffIssues || [])]
@@ -139,7 +152,7 @@ function generateReport(bivrName, compareName, env, apiIssues, phoneIssues, jump
     `# ${_t('rpt_title')}`, '',
     '| | |', '|---|---|',
     `| **${_t('rpt_file')}** | \`${bivrName}\` |`,
-    `| **${_t('rpt_env')}** | ${envLabel} |`,
+    `| **${_t('rpt_env')}** | ${envText} |`,
     `| **${_t('rpt_time')}** | ${now} |`,
     `| **${_t('rpt_result')}** | ${verdict} |`,
     '', '---', '',
@@ -151,10 +164,10 @@ function generateReport(bivrName, compareName, env, apiIssues, phoneIssues, jump
   ]
 
   const sections = []
-  if (apiIssues !== null) sections.push(_renderApiSection(apiIssues, envLabel))
+  if (apiIssues !== null) sections.push(_renderApiSection(apiIssues, envText))
   if (phoneIssues !== null) sections.push(_renderPhoneSection(phoneIssues))
   if (jumpIssues !== null) sections.push(_renderJumpSection(jumpIssues))
-  if (diffIssues !== null) sections.push(_renderDiffSection(diffIssues, compareName || ''))
+  if (diffIssues !== null) sections.push(_renderDiffSection(diffIssues, compareName || '', envLabel(masterEnv), envLabel(demoEnv)))
 
   for (let i = 0; i < sections.length; i++) {
     lines.push(...sections[i])

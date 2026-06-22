@@ -47,7 +47,8 @@ const ENV_CONFIG = {
 }
 const OPTIONAL_FIELDS = new Set(['announce', 'office_id', 'amivoice.silent_detection_ms', 'amivoice.timeout_ms'])
 const TEST_NUMBERS = new Set(['05017074509', '05017066071', '05017405708', '05017070320'])
-const SUBFLOW_MARKERS = ['S｜', 'サブ｜', 'サブ', 'Sub｜', 'Sub', 'sub｜', 'sub']
+const SUBFLOW_MARKERS = ['S｜', 'Ｓ｜', 'サブ｜', 'サブ', 'Sub｜', 'Sub', 'sub｜', 'sub']
+const MAINFLOW_MARKERS = ['M｜', 'Ｍ｜', 'メイン｜', 'メイン', 'Main｜', 'Main', 'main｜', 'main']
 const JUMP_TYPE = 'drjoy^Custom Module$Custom Jump to Flow'
 const TRANSFER_TYPE = 'drjoy^Call Transfer$call-transfer'
 const TTS_TYPE = 'drjoy^Text To Speech$Text to speech'
@@ -65,6 +66,79 @@ async function parseBivr(file) {
     } catch (_) {}
   }
   return flows
+}
+
+// ── Zip-set parser (1 zip = .bivr + ivr-property.md + エクスポート詳細.txt) ─────
+async function parseZipSet(file) {
+  const zip = await JSZip.loadAsync(file)
+  let bivrEntry = null
+  let detailText = null
+  const propsFiles = [] // { name, text }
+
+  for (const [path, entry] of Object.entries(zip.files)) {
+    if (entry.dir) continue
+    const lower = path.toLowerCase()
+    const base = path.split('/').pop()
+    if (lower.endsWith('.bivr')) {
+      bivrEntry = entry
+    } else if (lower.endsWith('ivr-property.md') || lower.endsWith('.md')) {
+      propsFiles.push({ name: base, text: await entry.async('text') })
+    } else if (lower.endsWith('.txt')) {
+      detailText = await entry.async('text')
+    }
+  }
+
+  if (!bivrEntry) {
+    throw new Error('zip 内に .bivr ファイルが見つかりません / Không tìm thấy file .bivr trong zip')
+  }
+
+  const bivrBuf = await bivrEntry.async('arraybuffer')
+  const flows = await parseBivr(bivrBuf)
+  const detail = detailText ? parseExportDetail(detailText) : { env: null, exportTime: null, flows: [] }
+
+  return {
+    bivrName: bivrEntry.name.split('/').pop(),
+    flows,
+    propsFiles,
+    detail,
+  }
+}
+
+// ── Export-detail parser (エクスポート詳細.txt) ───────────────────────────────
+function flowKind(name) {
+  const part = name.includes('$') ? name.split('$').slice(1).join('$') : name
+  if (MAINFLOW_MARKERS.some(m => part.startsWith(m))) return 'main'
+  if (SUBFLOW_MARKERS.some(m => part.startsWith(m))) return 'sub'
+  return 'other'
+}
+
+function parseExportDetail(text) {
+  const res = { env: null, exportTime: null, flows: [] }
+  let section = null
+  for (const rawLine of text.split('\n')) {
+    const line = rawLine.trim()
+    if (!line) continue
+    if (line.startsWith('エクスポート環境')) {
+      if (line.includes('本番')) res.env = 'master'
+      else if (line.includes('デモ')) res.env = 'demo'
+      continue
+    }
+    if (line.startsWith('エクスポート日時')) {
+      res.exportTime = line.substring(line.indexOf(':') + 1).trim()
+      continue
+    }
+    if (line.startsWith('【フロー】')) { section = 'flow'; continue }
+    if (line.startsWith('【IVRプロパティ】')) { section = 'prop'; continue }
+    if (line.startsWith('■')) continue
+    if (section === 'flow') {
+      const m = line.match(/^\d+\.\s+(.+)$/)
+      if (m) {
+        const name = m[1].trim()
+        res.flows.push({ name, kind: flowKind(name) })
+      }
+    }
+  }
+  return res
 }
 
 function parseIvrProperties(text) {
