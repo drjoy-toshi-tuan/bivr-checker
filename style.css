@@ -580,7 +580,6 @@ body {
   margin-top: 16px;
 }
 .btn-run-full {
-  max-width: 750px;
   width: 100%;
   align-self: center;
   justify-content: center;
