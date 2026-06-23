@@ -374,7 +374,7 @@ def generate_report(
         ))
     if script_issues is not None:
         sections.append(_render_generic_section(
-            "Kiểm tra cú pháp JavaScript — General / Script",
+            "Kiểm tra cú pháp module [Script]",
             script_issues,
             "Không phát hiện lỗi cú pháp JavaScript.",
         ))
