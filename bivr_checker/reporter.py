@@ -60,6 +60,13 @@ _TYPE_VI = {
     # sub-module (STT/DTMF)
     "sub_label_syntax": "Sub-module label sai cú pháp (cần bắt đầu bằng save- hoặc rag-)",
     "sub_not_connected": "Sub-module chưa được nối (moduleName rỗng)",
+    # General/Script JS syntax
+    "script_syntax": "General/Script: lỗi cú pháp JavaScript (構文エラー)",
+    "script_node_missing": "Không kiểm tra được cú pháp JS — thiếu Node.js trên máy",
+    # Entity Classifier
+    "entity_nodename_empty": "Entity Classifier: nodeName đang để trống",
+    "entity_nodename_missing": "Entity Classifier: nodeName không tồn tại trong flow",
+    "entity_categorywords_empty": "Entity Classifier: categoryWords đang để trống",
 }
 
 
@@ -272,6 +279,8 @@ def generate_report(
     reconfirm_issues: Optional[List[Dict]] = None,
     flag_issues: Optional[List[Dict]] = None,
     submod_issues: Optional[List[Dict]] = None,
+    script_issues: Optional[List[Dict]] = None,
+    entity_issues: Optional[List[Dict]] = None,
     base_bivr_path: Optional[str] = None,
 ) -> str:
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -282,7 +291,7 @@ def generate_report(
         (api_issues or []) + (phone_issues or []) + (jump_issues or []) + (diff_issues or [])
         + (prompt_issues or []) + (ctxrouter_issues or []) + (regex_issues or [])
         + (openai_issues or []) + (reconfirm_issues or []) + (flag_issues or [])
-        + (submod_issues or [])
+        + (submod_issues or []) + (script_issues or []) + (entity_issues or [])
     )
     total_errors = _count(all_issues, "ERROR")
     total_warnings = _count(all_issues, "WARNING")
@@ -360,6 +369,18 @@ def generate_report(
             "Kiểm tra Sub-module (STT / DTMF) — label & kết nối",
             submod_issues,
             "Tất cả sub-module đều đúng cú pháp (save-/rag-) và đã được nối.",
+        ))
+    if script_issues is not None:
+        sections.append(_render_generic_section(
+            "Kiểm tra cú pháp JavaScript — General / Script",
+            script_issues,
+            "Không phát hiện lỗi cú pháp JavaScript.",
+        ))
+    if entity_issues is not None:
+        sections.append(_render_generic_section(
+            "Kiểm tra Entity Classifier",
+            entity_issues,
+            "Tất cả Entity Classifier đều hợp lệ (nodeName / categoryWords).",
         ))
     if diff_issues is not None and base_bivr_path:
         sections.append(_render_diff_issues(diff_issues, base_bivr_path))

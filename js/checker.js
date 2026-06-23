@@ -552,3 +552,43 @@ function checkSubModule(flows) {
   }
   return issues
 }
+
+// ── Check #8 (FLOW): General/Script — cú pháp JavaScript ──────────────────────
+function checkScriptSyntax(flows) {
+  const issues = []
+  for (const [flowName, flow] of Object.entries(flows)) {
+    for (const [modName, mod] of Object.entries(flow.modules || {})) {
+      if (mod.type !== SCRIPT_TYPE) continue
+      const script = (mod.params || {}).script || ''
+      if (!script.trim()) continue
+      try {
+        // Bọc trong function để khớp ngữ nghĩa Rhino (cho phép return top-level)
+        new Function(script)
+      } catch (e) {
+        if (e instanceof SyntaxError) {
+          issues.push({ type: 'script_syntax', severity: 'ERROR', flow: flowName, module: modName, value: e.message })
+        }
+      }
+    }
+  }
+  return issues
+}
+
+// ── Check #9 (FLOW): Entity Classifier — nodeName / categoryWords ─────────────--
+const ENTITY_CLASSIFIER = 'drjoy^External Integration$Entity Classifier'
+function checkEntityClassifier(flows) {
+  const issues = []
+  for (const [flowName, flow] of Object.entries(flows)) {
+    const modNames = flowModuleNames(flow)
+    for (const [modName, mod] of Object.entries(flow.modules || {})) {
+      if (mod.type !== ENTITY_CLASSIFIER) continue
+      const p = mod.params || {}
+      const node = (p.nodeName || '').trim()
+      if (!node) issues.push({ type: 'entity_nodename_empty', severity: 'ERROR', flow: flowName, module: modName })
+      else if (!modNames.has(node)) issues.push({ type: 'entity_nodename_missing', severity: 'ERROR', flow: flowName, module: modName, node })
+      const cw = (p.categoryWords || '').trim()
+      if (!cw) issues.push({ type: 'entity_categorywords_empty', severity: 'ERROR', flow: flowName, module: modName })
+    }
+  }
+  return issues
+}

@@ -37,7 +37,7 @@ Kết hợp nhiều phần:
 python main.py "<path/to/file.bivr>" <master|demo> --props "<path/to/ivr.properties>" --only api phone jump
 ```
 
-**Tùy chọn --only:** `api`, `phone`, `jump`, `diff`, `prompt`, `ctxrouter`, `regex`, `openai`, `reconfirm`, `flag`, `submod`
+**Tùy chọn --only:** `api`, `phone`, `jump`, `diff`, `prompt`, `ctxrouter`, `regex`, `openai`, `reconfirm`, `flag`, `submod`, `script`, `entity`
 - `api`: Kiểm tra API URL trong IVR Properties (cần `--props`)
 - `phone`: Kiểm tra số điện thoại chuyển tiếp (liệt kê tất cả số, cảnh báo số test)
 - `jump`: Kiểm tra Jump to Flow (tên flow đích có tồn tại không)
@@ -49,8 +49,10 @@ python main.py "<path/to/file.bivr>" <master|demo> --props "<path/to/ivr.propert
 - `reconfirm`: Kiểm tra Re-confirmation node data — object `<%...%>` đã tạo chưa; `#data#` thì `nodeName` phải tồn tại trong flow.
 - `flag`: Kiểm tra saveCompletionFlag2db — `status`/`smsFlag` bị để trống (WARNING).
 - `submod`: Kiểm tra sub-module (`subs`) của STT/DTMF (AmiVoice/Soniox Speech to Text, DTMF Custom, DTMF AmiVoice STT Input) — `label` phải bắt đầu bằng `save-` hoặc `rag-` (sai = ERROR); `moduleName` rỗng = chưa nối (WARNING).
+- `script`: Kiểm tra cú pháp JavaScript trong module General/Script (`@General$Script`). CLI dùng `node --check` (cần Node.js trên máy; thiếu → WARNING bỏ qua); Web UI dùng `new Function()`. Lỗi cú pháp = ERROR.
+- `entity`: Kiểm tra Entity Classifier (`drjoy^External Integration$Entity Classifier`) — `nodeName` rỗng/không tồn tại trong flow = ERROR; `categoryWords` rỗng = ERROR. (Phần đối chiếu list エンティティ qua admin API chưa tích hợp — xem ghi chú.)
 
-**Phân loại:** `prompt` là loại **hỗn hợp (mix)** cần cả Property + Flow; `ctxrouter`/`regex`/`openai`/`reconfirm`/`flag`/`submod` chỉ cần Flow.
+**Phân loại:** `prompt` là loại **hỗn hợp (mix)** cần cả Property + Flow; `ctxrouter`/`regex`/`openai`/`reconfirm`/`flag`/`submod`/`script`/`entity` chỉ cần Flow.
 
 **Môi trường:**
 - `master` = 本番（本番環境）

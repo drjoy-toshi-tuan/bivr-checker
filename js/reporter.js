@@ -209,6 +209,7 @@ function generateReport(opts) {
     apiIssues = null, phoneIssues = null, jumpIssues = null, diffIssues = null,
     promptIssues = null, ctxrouterIssues = null, regexIssues = null,
     openaiIssues = null, reconfirmIssues = null, flagIssues = null, submodIssues = null,
+    scriptIssues = null, entityIssues = null,
   } = opts
   const envText = envLabel(env)
   const now = new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
@@ -217,7 +218,7 @@ function generateReport(opts) {
     ...(apiIssues || []), ...(phoneIssues || []), ...(jumpIssues || []), ...(diffIssues || []),
     ...(promptIssues || []), ...(ctxrouterIssues || []), ...(regexIssues || []),
     ...(openaiIssues || []), ...(reconfirmIssues || []), ...(flagIssues || []),
-    ...(submodIssues || []),
+    ...(submodIssues || []), ...(scriptIssues || []), ...(entityIssues || []),
   ]
   const totalErrors = all.filter(i => i.severity === 'ERROR').length
   const totalWarnings = all.filter(i => i.severity === 'WARNING').length
@@ -249,6 +250,8 @@ function generateReport(opts) {
   if (reconfirmIssues !== null) sections.push(_renderGenericSection(_t('sec_reconfirm'), reconfirmIssues, _t('no_issues')))
   if (flagIssues !== null) sections.push(_renderGenericSection(_t('sec_flag'), flagIssues, _t('no_issues')))
   if (submodIssues !== null) sections.push(_renderGenericSection(_t('sec_submod'), submodIssues, _t('no_issues')))
+  if (scriptIssues !== null) sections.push(_renderGenericSection(_t('sec_script'), scriptIssues, _t('no_issues')))
+  if (entityIssues !== null) sections.push(_renderGenericSection(_t('sec_entity'), entityIssues, _t('no_issues')))
   if (diffIssues !== null) sections.push(_renderDiffSection(diffIssues, compareName || '', envLabel(masterEnv), envLabel(demoEnv)))
 
   for (let i = 0; i < sections.length; i++) {
