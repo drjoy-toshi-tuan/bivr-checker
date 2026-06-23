@@ -235,6 +235,7 @@ def main():
                     envc.get("DRJOY_ENV", args.environment),
                     envc["DRJOY_USERNAME"],
                     envc["DRJOY_PASSWORD"],
+                    client_basic=envc.get("DRJOY_CLIENT_BASIC"),
                 )
                 client.login()
                 entity_issues = entity_issues + check_entity_coverage(flows, client)

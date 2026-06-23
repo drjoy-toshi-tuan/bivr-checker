@@ -11,6 +11,7 @@ Luồng (theo HAR):
 
 Admin API được uỷ quyền bằng header Authorization: Bearer <access_token>.
 """
+import base64
 import json
 import ssl
 import urllib.error
@@ -22,6 +23,12 @@ ENV_HOSTS = {
     "demo":   {"oauth": "https://demo-oauth.famishare.jp", "admin": "https://demo-admin.famishare.jp"},
 }
 
+# OAuth client (Basic auth) cho endpoint cấp token /uaa/oauth/token.
+# Frontend admin DrJOY dùng chung client "demo:demo" cho cả master lẫn demo.
+# THIẾU header này → endpoint trả 401 Unauthorized ngay (chưa kiểm tới user/pass).
+# Có thể override bằng env DRJOY_CLIENT_BASIC (dạng "client_id:client_secret").
+DEFAULT_CLIENT_BASIC = "demo:demo"
+
 _UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
        "(KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36")
 
@@ -31,13 +38,15 @@ class DrjoyApiError(Exception):
 
 
 class DrjoyClient:
-    def __init__(self, env: str, username: str, password: str, timeout: int = 20):
+    def __init__(self, env: str, username: str, password: str, timeout: int = 20,
+                 client_basic: str = None):
         if env not in ENV_HOSTS:
             raise DrjoyApiError(f"môi trường không hợp lệ: {env}")
         self.hosts = ENV_HOSTS[env]
         self.username = username
         self.password = password
         self.timeout = timeout
+        self.client_basic = client_basic or DEFAULT_CLIENT_BASIC
         self.token = None
         self._ctx = ssl.create_default_context()
 
@@ -64,11 +73,15 @@ class DrjoyClient:
             "password": self.password,
             "save_login": "true",
         }
+        headers = self._headers(json_body=False)
+        # Xác thực OAuth client bằng Basic auth (bắt buộc, nếu không sẽ 401).
+        headers["Authorization"] = "Basic " + base64.b64encode(
+            self.client_basic.encode("utf-8")).decode("ascii")
         req = urllib.request.Request(
             self.hosts["oauth"] + "/uaa/oauth/token",
             data=urllib.parse.urlencode(data).encode("utf-8"),
             method="POST",
-            headers=self._headers(json_body=False),
+            headers=headers,
         )
         try:
             resp = urllib.request.urlopen(req, timeout=self.timeout, context=self._ctx)
