@@ -21,6 +21,7 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="repla
 
 from bivr_checker.parser import parse_bivr
 from bivr_checker.ivr_properties_parser import parse_ivr_properties
+from bivr_checker.env_config import load_env
 from bivr_checker.checks.api_url import check_api_urls
 from bivr_checker.checks.phone_number import check_phone_numbers
 from bivr_checker.checks.jump_to_flow import check_jump_to_flow
@@ -224,6 +225,23 @@ def main():
     entity_issues = None
     if "entity" in selected:
         entity_issues = check_entity_classifier(flows)
+        # Đối chiếu categoryWords ↔ list エンティティ qua admin API (chỉ khi có .env)
+        envc = load_env()
+        if envc.get("DRJOY_USERNAME") and envc.get("DRJOY_PASSWORD"):
+            try:
+                from bivr_checker.drjoy_api import DrjoyClient
+                from bivr_checker.checks.entity_coverage import check_entity_coverage
+                client = DrjoyClient(
+                    envc.get("DRJOY_ENV", args.environment),
+                    envc["DRJOY_USERNAME"],
+                    envc["DRJOY_PASSWORD"],
+                )
+                client.login()
+                entity_issues = entity_issues + check_entity_coverage(flows, client)
+            except Exception as ex:
+                print(f"  (entity API coverage bỏ qua: {ex})")
+        else:
+            print("  (entity API coverage bỏ qua: thiếu DRJOY_USERNAME/PASSWORD trong .env)")
         e, w = _ew(entity_issues)
         print(f"  Entity Class. : {e} lỗi, {w} cảnh báo")
 

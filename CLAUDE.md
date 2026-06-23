@@ -50,7 +50,7 @@ python main.py "<path/to/file.bivr>" <master|demo> --props "<path/to/ivr.propert
 - `flag`: Kiểm tra saveCompletionFlag2db — `status`/`smsFlag` bị để trống (WARNING).
 - `submod`: Kiểm tra sub-module (`subs`) của STT/DTMF (AmiVoice/Soniox Speech to Text, DTMF Custom, DTMF AmiVoice STT Input) — `label` phải bắt đầu bằng `save-` hoặc `rag-` (sai = ERROR); `moduleName` rỗng = chưa nối (WARNING).
 - `script`: Kiểm tra cú pháp JavaScript trong module General/Script (`@General$Script`). CLI dùng `node --check` (cần Node.js trên máy; thiếu → WARNING bỏ qua); Web UI dùng `new Function()`. Lỗi cú pháp = ERROR.
-- `entity`: Kiểm tra Entity Classifier (`drjoy^External Integration$Entity Classifier`) — `nodeName` rỗng/không tồn tại trong flow = ERROR; `categoryWords` rỗng = ERROR. (Phần đối chiếu list エンティティ qua admin API chưa tích hợp — xem ghi chú.)
+- `entity`: Kiểm tra Entity Classifier (`drjoy^External Integration$Entity Classifier`) — `nodeName` rỗng/không tồn tại trong flow = ERROR; `categoryWords` rỗng = ERROR. **Đối chiếu API (chỉ CLI):** nếu `.env` có `DRJOY_USERNAME`/`DRJOY_PASSWORD`, CLI sẽ login admin DrJOY, lấy list エンティティ của `categoryWords`, kiểm tra conditional jump (`next[].condition`) phủ đủ mọi tên entity (output) — thiếu = ERROR; category không tồn tại = ERROR. Web UI không chạy phần API (bị chặn CORS). Cấu hình xem `.env.example`.
 
 **Phân loại:** `prompt` là loại **hỗn hợp (mix)** cần cả Property + Flow; `ctxrouter`/`regex`/`openai`/`reconfirm`/`flag`/`submod`/`script`/`entity` chỉ cần Flow.
 

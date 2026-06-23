@@ -67,6 +67,8 @@ _TYPE_VI = {
     "entity_nodename_empty": "Entity Classifier: nodeName đang để trống",
     "entity_nodename_missing": "Entity Classifier: nodeName không tồn tại trong flow",
     "entity_categorywords_empty": "Entity Classifier: categoryWords đang để trống",
+    "entity_category_not_found": "Entity Classifier: categoryWords không khớp category nào trên admin (エンティティ)",
+    "entity_not_covered": "Entity Classifier: conditional jump chưa phủ hết entity đăng ký (thiếu từ vựng)",
 }
 
 

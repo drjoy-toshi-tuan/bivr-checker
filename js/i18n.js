@@ -178,6 +178,8 @@ const I18N = {
     type_entity_nodename_empty: 'Entity Classifier: nodeName が空です',
     type_entity_nodename_missing: 'Entity Classifier: nodeName がフローに存在しません',
     type_entity_categorywords_empty: 'Entity Classifier: categoryWords が空です',
+    type_entity_category_not_found: 'Entity Classifier: categoryWords に一致する category が admin に存在しません',
+    type_entity_not_covered: 'Entity Classifier: conditional jump が登録エンティティを網羅していません',
   },
   vi: {
     app_title: 'BIVR Checker',
@@ -356,6 +358,8 @@ const I18N = {
     type_entity_nodename_empty: 'Entity Classifier: nodeName đang để trống',
     type_entity_nodename_missing: 'Entity Classifier: nodeName không tồn tại trong flow',
     type_entity_categorywords_empty: 'Entity Classifier: categoryWords đang để trống',
+    type_entity_category_not_found: 'Entity Classifier: categoryWords không khớp category nào trên admin (エンティティ)',
+    type_entity_not_covered: 'Entity Classifier: conditional jump chưa phủ hết entity đăng ký (thiếu từ vựng)',
   },
 }
 
