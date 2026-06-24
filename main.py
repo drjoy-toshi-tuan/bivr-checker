@@ -4,8 +4,9 @@ bivr-checker: Công cụ kiểm tra file BIVR (Brekeke IVR)
 Output: Báo cáo Markdown bằng tiếng Việt (固有名詞のみ日本語)
 
 Cách dùng:
-  python main.py <file.bivr> <master|demo> [--props <ivr.properties>] [--compare <prod.bivr>]
+  python main.py <file.bivr> [master|demo] [--props <ivr.properties>] [--compare <prod.bivr>]
                  [--only api phone jump diff] [--output report.md]
+  (Môi trường tùy chọn — tự nhận từ 'env=' trong file .bivr/.md nếu bỏ trống.)
 
 Ví dụ chỉ check số điện thoại:
   python main.py file.bivr master --only phone
@@ -19,8 +20,11 @@ from datetime import datetime
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
-from bivr_checker.parser import parse_bivr
-from bivr_checker.ivr_properties_parser import parse_ivr_properties
+from bivr_checker.parser import parse_bivr, detect_environment as detect_env_from_flows
+from bivr_checker.ivr_properties_parser import (
+    parse_ivr_properties,
+    detect_environment as detect_env_from_props,
+)
 from bivr_checker.env_config import load_env
 from bivr_checker.checks.api_url import check_api_urls
 from bivr_checker.checks.phone_number import check_phone_numbers
@@ -44,6 +48,36 @@ ALL_CHECKS = {
 }
 # Các check cần file IVR Properties
 PROPS_CHECKS = {"api", "prompt"}
+
+
+def resolve_environment(env_from_bivr, env_from_props, cli_env, dotenv_env):
+    """
+    Xác định môi trường theo logic mới: ưu tiên đọc 'env=' ngay trong file
+    upload (flow .bivr → property .md), sau đó mới tới tham số CLI và .env.
+    In cảnh báo nếu các nguồn mâu thuẫn. Trả về 'master'/'demo' hoặc None.
+    """
+    # Cảnh báo nếu flow và property khai báo môi trường khác nhau
+    if env_from_bivr and env_from_props and env_from_bivr != env_from_props:
+        print(f"  ⚠️  Môi trường trong flow (.bivr = {env_from_bivr}) khác với "
+              f"property (.md = {env_from_props}). Ưu tiên dùng theo flow.")
+
+    detected = env_from_bivr or env_from_props
+    if detected:
+        src = "flow (.bivr)" if env_from_bivr else "property (.md)"
+        if cli_env and cli_env != detected:
+            print(f"  ⚠️  Tham số CLI là '{cli_env}' nhưng file khai báo '{detected}'. "
+                  f"Dùng môi trường đọc từ {src}: '{detected}'.")
+        else:
+            print(f"  → Tự nhận môi trường từ {src}: '{detected}'.")
+        return detected
+
+    # Không đọc được từ file → quay về tham số CLI / .env
+    if cli_env:
+        return cli_env
+    if dotenv_env:
+        print(f"  → Dùng môi trường từ .env (DRJOY_ENV): '{dotenv_env}'.")
+        return dotenv_env.lower()
+    return None
 
 
 def main():
@@ -75,8 +109,14 @@ def main():
     parser.add_argument("bivr", help="Đường dẫn đến file .bivr cần kiểm tra")
     parser.add_argument(
         "environment",
+        nargs="?",
         choices=["master", "demo"],
-        help="Môi trường: master (本番) hoặc demo (デモ)",
+        default=None,
+        help=(
+            "Môi trường: master (本番) hoặc demo (デモ). "
+            "Có thể bỏ trống — hệ thống tự nhận từ chính file upload "
+            "(env= trong .bivr / .md)."
+        ),
     )
     parser.add_argument(
         "--props",
@@ -137,13 +177,24 @@ def main():
         ivr_props = parse_ivr_properties(args.props)
         print(f"        → {len(ivr_props)} field(s)")
 
-    env_label = "master (本番)" if args.environment == "master" else "demo (デモ)"
+    # Xác định môi trường: ưu tiên đọc 'env=' ngay trong file upload
+    env_from_bivr = detect_env_from_flows(flows)
+    env_from_props = detect_env_from_props(args.props) if args.props else None
+    environment = resolve_environment(
+        env_from_bivr, env_from_props, args.environment, load_env().get("DRJOY_ENV")
+    )
+    if not environment:
+        print("Lỗi: Không xác định được môi trường. File không có 'env=' và "
+              "không truyền tham số <master|demo>. Hãy thêm tham số môi trường.")
+        sys.exit(1)
+
+    env_label = "master (本番)" if environment == "master" else "demo (デモ)"
     print(f"[Kiểm tra] Môi trường: {env_label} | Phần check: {', '.join(sorted(selected))}")
 
     # Chạy từng phần check
     api_issues = None
     if "api" in selected:
-        api_issues = check_api_urls(ivr_props, args.environment)
+        api_issues = check_api_urls(ivr_props, environment)
         errors = sum(1 for i in api_issues if i.get("severity") == "ERROR")
         print(f"  API URL       : {errors} lỗi")
 
@@ -232,7 +283,7 @@ def main():
                 from bivr_checker.drjoy_api import DrjoyClient
                 from bivr_checker.checks.entity_coverage import check_entity_coverage
                 client = DrjoyClient(
-                    envc.get("DRJOY_ENV", args.environment),
+                    environment,
                     envc["DRJOY_USERNAME"],
                     envc["DRJOY_PASSWORD"],
                     client_basic=envc.get("DRJOY_CLIENT_BASIC"),
@@ -249,7 +300,7 @@ def main():
     print("Đang tạo báo cáo Markdown...")
     report = generate_report(
         bivr_path=args.bivr,
-        environment=args.environment,
+        environment=environment,
         api_issues=api_issues,
         phone_issues=phone_issues,
         jump_issues=jump_issues,

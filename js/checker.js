@@ -91,6 +91,48 @@ async function parseBivr(file) {
   return flows
 }
 
+// ── Xác định môi trường (master/demo) ngay trong file upload ───────────────────
+// Mỗi flow có desc "[env=demo]"; file property có comment "# env=demo".
+function detectEnvFromFlows(flows) {
+  for (const data of Object.values(flows || {})) {
+    const m = String((data && data.desc) || '').match(/env\s*=\s*(master|demo)/i)
+    if (m) return m[1].toLowerCase()
+  }
+  return null
+}
+function detectEnvFromPropsText(text) {
+  const m = String(text || '').match(/env\s*=\s*(master|demo)/i)
+  return m ? m[1].toLowerCase() : null
+}
+// Fallback cho file cũ không có 'env=': suy từ hostname trong property
+function inferEnvFromPropsText(text) {
+  const props = parseIvrProperties(text)
+  let demo = 0, master = 0
+  for (const v of Object.values(props || {})) {
+    const s = String(v)
+    if (s.includes('demo-reserve.famishare.jp') || s.includes('10.0.20.11')) demo++
+    else if (s.includes('reserve.drjoy.jp') || s.includes('speech.internal.assistant.com')) master++
+  }
+  if (!demo && !master) return null
+  return demo >= master ? 'demo' : 'master'
+}
+// Logic chung: ưu tiên 'env=' trong flow (.bivr) → property (.md) →
+// エクスポート詳細.txt → suy từ hostname.
+function resolveEnv({ flows, propsFiles, exportEnv }) {
+  const fromFlows = detectEnvFromFlows(flows)
+  if (fromFlows) return fromFlows
+  for (const pf of (propsFiles || [])) {
+    const e = detectEnvFromPropsText(pf.text)
+    if (e) return e
+  }
+  if (exportEnv) return exportEnv
+  for (const pf of (propsFiles || [])) {
+    const e = inferEnvFromPropsText(pf.text)
+    if (e) return e
+  }
+  return null
+}
+
 // ── Zip-set parser (1 zip = .bivr + ivr-property.md + エクスポート詳細.txt) ─────
 async function parseZipSet(file) {
   const zip = await JSZip.loadAsync(file)
@@ -118,6 +160,9 @@ async function parseZipSet(file) {
   const bivrBuf = await bivrEntry.async('arraybuffer')
   const flows = await parseBivr(bivrBuf)
   const detail = detailText ? parseExportDetail(detailText) : { env: null, exportTime: null, flows: [] }
+  // Logic mới: ưu tiên môi trường đọc trực tiếp từ flow/property, sau đó mới
+  // tới エクスポート詳細.txt (giữ làm fallback).
+  detail.env = resolveEnv({ flows, propsFiles, exportEnv: detail.env })
 
   return {
     bivrName: bivrEntry.name.split('/').pop(),
@@ -566,7 +611,20 @@ function checkScriptSyntax(flows) {
         new Function(script)
       } catch (e) {
         if (e instanceof SyntaxError) {
-          issues.push({ type: 'script_syntax', severity: 'ERROR', flow: flowName, module: modName, value: e.message })
+          const issue = {
+            type: 'script_syntax', severity: 'ERROR', flow: flowName, module: modName,
+            message: e.message, value: e.message,
+          }
+          // Một số engine (Firefox) cung cấp lineNumber cho lỗi trong function body
+          const ln = e.lineNumber
+          if (typeof ln === 'number' && ln >= 1) {
+            const src = script.split('\n')
+            if (ln <= src.length) {
+              issue.line = ln
+              issue.code = src[ln - 1].trim()
+            }
+          }
+          issues.push(issue)
         }
       }
     }

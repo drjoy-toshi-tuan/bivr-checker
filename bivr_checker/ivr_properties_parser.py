@@ -1,4 +1,21 @@
 """Parser cho file IVR Properties (định dạng key=value)"""
+import re
+
+
+def detect_environment(path: str):
+    """
+    Đọc môi trường (master/demo) từ dòng comment "# env=demo" ở đầu file
+    IVR Properties. Trả về 'master' / 'demo', hoặc None nếu không tìm thấy.
+    """
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                m = re.search(r"env\s*=\s*(master|demo)", line, re.IGNORECASE)
+                if m:
+                    return m.group(1).lower()
+    except OSError:
+        return None
+    return None
 
 
 def parse_ivr_properties(path: str) -> dict:

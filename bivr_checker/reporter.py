@@ -124,7 +124,9 @@ def _render_phone_issues(issues: List[Dict]) -> List[str]:
             lines.append(f"| `{_fmt_flow(i['flow'])}` | `{i['module']}` | `{i['number']}` | {note} |")
         lines.append("")
     else:
+        # Module không tồn tại → chỉ báo điều đó, không kèm "không có lỗi"
         lines += ["🟢 Không tồn tại module 「転送」 (Nối Máy) trong BIVR.", ""]
+        return lines
 
     # Cảnh báo số test
     if not warnings:
@@ -161,7 +163,9 @@ def _render_jump_issues(issues: List[Dict]) -> List[str]:
             lines.append(f"| `{_fmt_flow(i['flow'])}` | `{i['module']}` | {target} | {note} |")
         lines.append("")
     else:
+        # Module không tồn tại → chỉ báo điều đó, không kèm "không có lỗi"
         lines += ["🟢 Không tồn tại module 「Jump To Flow」 trong BIVR.", ""]
+        return lines
 
     # Chi tiết lỗi / cảnh báo
     if not problems:
@@ -225,6 +229,47 @@ def _issue_detail(i: Dict) -> str:
         v = v if len(v) <= 80 else v[:80] + "…"
         parts.append(f"giá trị: `{v}`")
     return " — " + " · ".join(parts) if parts else ""
+
+
+def _render_script_issues(issues: List[Dict]) -> List[str]:
+    """Render riêng cho check cú pháp JS — nêu rõ dòng lỗi, nội dung dòng, thông báo lỗi."""
+    lines = _section_header("Kiểm tra cú pháp JavaScript — General / Script")
+    if not issues:
+        lines += ["🟢 Không phát hiện lỗi cú pháp JavaScript.", ""]
+        return lines
+
+    errors = _count(issues, "ERROR")
+    warnings = _count(issues, "WARNING")
+    lines += [f"**Tổng:** 🔴 {errors} lỗi · 🟡 {warnings} cảnh báo", ""]
+
+    for i in issues:
+        e = _EMOJI.get(i["severity"], "⚪")
+        flow = _fmt_flow(i.get("flow"))
+        mod = i.get("module", "")
+
+        if i.get("type") == "script_node_missing":
+            lines += [
+                f"### {e} {_TYPE_VI['script_node_missing']}",
+                "",
+                f"- Flow: `{flow}` ／ Module: `{mod}`",
+                "",
+            ]
+            continue
+
+        lines += [f"### {e} Flow: `{flow}` ／ Module: `{mod}`", ""]
+        msg = i.get("message") or i.get("value") or "SyntaxError"
+        lines.append(f"- **Lỗi**: `{msg}`")
+        line_no = i.get("line")
+        if line_no:
+            lines.append(f"- **Dòng {line_no}**:")
+            code = i.get("code")
+            if code:
+                lines += ["", "```js", code, "```", ""]
+            else:
+                lines.append("")
+        else:
+            lines.append("")
+    return lines
 
 
 def _render_generic_section(title: str, issues: List[Dict], ok_msg: str) -> List[str]:
@@ -373,11 +418,7 @@ def generate_report(
             "Tất cả sub-module đều đúng cú pháp (save-/rag-) và đã được nối.",
         ))
     if script_issues is not None:
-        sections.append(_render_generic_section(
-            "Kiểm tra cú pháp JavaScript — General / Script",
-            script_issues,
-            "Không phát hiện lỗi cú pháp JavaScript.",
-        ))
+        sections.append(_render_script_issues(script_issues))
     if entity_issues is not None:
         sections.append(_render_generic_section(
             "Kiểm tra Entity Classifier",
