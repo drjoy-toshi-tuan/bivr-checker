@@ -27,18 +27,6 @@ const UPLOAD_MODE = {
   property: { labelKey: 'up_property_label', hintKey: null,             accept: '.md',   icon: 'fa-sliders' },
 }
 
-// Suy ra môi trường từ nội dung IVR property (khi mode chỉ upload .md)
-function inferEnvFromProps(props) {
-  let demo = 0, master = 0
-  for (const v of Object.values(props || {})) {
-    const s = String(v)
-    if (s.includes('demo-reserve.famishare.jp') || s.includes('10.0.20.11')) demo++
-    else if (s.includes('reserve.drjoy.jp') || s.includes('speech.internal.assistant.com')) master++
-  }
-  if (!demo && !master) return null
-  return demo >= master ? 'demo' : 'master'
-}
-
 function flowsToDetail(flows) {
   return Object.keys(flows || {}).map(name => ({ name, kind: flowKind(name) }))
 }
@@ -58,12 +46,15 @@ function deriveGroupName(flows, fallbackName) {
 async function parsePrimary(file, mode) {
   if (mode === 'property') {
     const text = await file.text()
-    const props = parseIvrProperties(text)
-    return { bivrName: file.name, flows: {}, propsFiles: [{ name: file.name, text }], detail: { env: inferEnvFromProps(props), flows: [] } }
+    const set = { bivrName: file.name, flows: {}, propsFiles: [{ name: file.name, text }], detail: { env: null, flows: [] } }
+    set.detail.env = resolveEnv({ flows: set.flows, propsFiles: set.propsFiles, exportEnv: null })
+    return set
   }
   if (mode === 'flow') {
     const flows = await parseBivr(file)
-    return { bivrName: file.name, flows, propsFiles: [], detail: { env: null, flows: flowsToDetail(flows) } }
+    const set = { bivrName: file.name, flows, propsFiles: [], detail: { env: null, flows: flowsToDetail(flows) } }
+    set.detail.env = resolveEnv({ flows: set.flows, propsFiles: set.propsFiles, exportEnv: null })
+    return set
   }
   return await parseZipSet(file)
 }

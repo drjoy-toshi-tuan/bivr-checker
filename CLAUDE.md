@@ -5,9 +5,15 @@ Kiểm tra file `.bivr` (Brekeke IVR) và tạo báo cáo Markdown tiếng Việ
 
 ## Cách chạy khi user yêu cầu check file
 
+> **Môi trường (`<master|demo>`) giờ là TÙY CHỌN.** Hệ thống tự nhận môi trường
+> ngay trong file upload: flow `.bivr` có `desc` dạng `[env=demo]`, file property
+> `.md` có dòng `# env=demo`. Ưu tiên: flow (.bivr) → property (.md) → tham số CLI
+> → `DRJOY_ENV` trong `.env`. Phần đối chiếu API của check `entity` cũng dùng đúng
+> môi trường này. Chỉ cần truyền `<master|demo>` khi file không có `env=`.
+
 ### Check tổng thể (tất cả phần)
 ```bash
-python main.py "<path/to/file.bivr>" <master|demo> --props "<path/to/ivr.properties>"
+python main.py "<path/to/file.bivr>" [master|demo] --props "<path/to/ivr.properties>"
 ```
 
 ### Check tổng thể + so sánh diff

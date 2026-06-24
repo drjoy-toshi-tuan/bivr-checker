@@ -48,7 +48,9 @@ function _renderPhoneSection(issues) {
     }
     lines.push('')
   } else {
+    // Module không tồn tại → chỉ báo điều đó, không kèm "không có lỗi"
     lines.push(`🟢 ${_t('phone_no_transfers')}`, '')
+    return lines
   }
 
   if (!warnings.length) {
@@ -85,7 +87,9 @@ function _renderJumpSection(issues) {
     }
     lines.push('')
   } else {
+    // Module không tồn tại → chỉ báo điều đó, không kèm "không có lỗi"
     lines.push(`🟢 ${_t('jump_no_modules')}`, '')
+    return lines
   }
 
   if (!problems.length) {
@@ -180,6 +184,39 @@ function _issueDetailBullets(i) {
   return out
 }
 
+function _renderScriptSection(title, issues, okMsg) {
+  const lines = [`## ${title}`, '']
+  if (!issues.length) {
+    lines.push(okMsg, '')
+    return lines
+  }
+  const errors = issues.filter(i => i.severity === 'ERROR').length
+  const warnings = issues.filter(i => i.severity === 'WARNING').length
+  lines.push(`🔴 ${errors} ${_t('errors_label')}　🟡 ${warnings} ${_t('warnings_label')}`, '')
+
+  for (const i of issues) {
+    const e = SEV_EMOJI[i.severity] || '⚪'
+    const lbl = _t('sev_' + i.severity.toLowerCase())
+    if (i.type === 'script_node_missing') {
+      lines.push(`### ${e} ${lbl} — ${_t('type_script_node_missing')}`, '')
+      if (i.flow) lines.push(`- Flow: \`${_fmtFlow(i.flow)}\`${i.module ? ` ／ ${_t('lbl_module')}: \`${i.module}\`` : ''}`)
+      lines.push('')
+      continue
+    }
+    lines.push(`### ${e} ${lbl} — Flow: \`${_fmtFlow(i.flow)}\`${i.module ? ` ／ \`${i.module}\`` : ''}`, '')
+    const msg = i.message || i.value || 'SyntaxError'
+    lines.push(`- **${_t('script_err_label')}**: \`${msg}\``)
+    if (i.line) {
+      lines.push(`- **${_t('script_line_label')} ${i.line}**:`)
+      if (i.code) lines.push('', '```js', i.code, '```', '')
+      else lines.push('')
+    } else {
+      lines.push('')
+    }
+  }
+  return lines
+}
+
 function _renderGenericSection(title, issues, okMsg) {
   const lines = [`## ${title}`, '']
   if (!issues.length) {
@@ -250,7 +287,7 @@ function generateReport(opts) {
   if (reconfirmIssues !== null) sections.push(_renderGenericSection(_t('sec_reconfirm'), reconfirmIssues, _t('no_issues')))
   if (flagIssues !== null) sections.push(_renderGenericSection(_t('sec_flag'), flagIssues, _t('no_issues')))
   if (submodIssues !== null) sections.push(_renderGenericSection(_t('sec_submod'), submodIssues, _t('no_issues')))
-  if (scriptIssues !== null) sections.push(_renderGenericSection(_t('sec_script'), scriptIssues, _t('no_issues')))
+  if (scriptIssues !== null) sections.push(_renderScriptSection(_t('sec_script'), scriptIssues, _t('no_issues')))
   if (entityIssues !== null) sections.push(_renderGenericSection(_t('sec_entity'), entityIssues, _t('no_issues')))
   if (diffIssues !== null) sections.push(_renderDiffSection(diffIssues, compareName || '', envLabel(masterEnv), envLabel(demoEnv)))
 
