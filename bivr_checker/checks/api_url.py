@@ -5,6 +5,12 @@ import yaml
 
 CONFIG_PATH = Path(__file__).parent.parent.parent / "config" / "environments.yaml"
 
+# Một số field chấp nhận nhiều giá trị hợp lệ.
+# amivoice.engine có thể là 入力汎用 hoặc 会話汎用 (cả hai đều đúng).
+ALT_ALLOWED_VALUES = {
+    "amivoice.engine": ["入力汎用", "会話汎用"],
+}
+
 
 def check_api_urls(ivr_props: dict, environment: str) -> List[Dict]:
     """
@@ -22,20 +28,31 @@ def check_api_urls(ivr_props: dict, environment: str) -> List[Dict]:
         if key in optional:
             continue
         actual_value = ivr_props.get(key)
+        allowed = ALT_ALLOWED_VALUES.get(key)
+        expected_display = " / ".join(allowed) if allowed else str(expected_value)
         if actual_value is None:
             issues.append({
                 "type": "missing_field",
                 "severity": "ERROR",
                 "field": key,
-                "expected": str(expected_value),
+                "expected": expected_display,
                 "actual": None,
             })
+        elif allowed is not None:
+            if str(actual_value) not in allowed:
+                issues.append({
+                    "type": "value_mismatch",
+                    "severity": "ERROR",
+                    "field": key,
+                    "expected": expected_display,
+                    "actual": str(actual_value),
+                })
         elif str(actual_value) != str(expected_value):
             issues.append({
                 "type": "value_mismatch",
                 "severity": "ERROR",
                 "field": key,
-                "expected": str(expected_value),
+                "expected": expected_display,
                 "actual": str(actual_value),
             })
 

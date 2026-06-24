@@ -46,6 +46,11 @@ const ENV_CONFIG = {
   },
 }
 const OPTIONAL_FIELDS = new Set(['announce', 'office_id', 'amivoice.silent_detection_ms', 'amivoice.timeout_ms'])
+// Một số field chấp nhận nhiều giá trị hợp lệ.
+// amivoice.engine có thể là 入力汎用 hoặc 会話汎用 (cả hai đều đúng).
+const ALT_ALLOWED_VALUES = {
+  'amivoice.engine': ['入力汎用', '会話汎用'],
+}
 const TEST_NUMBERS = new Set(['05017074509', '05017066071', '05017405708', '05017070320'])
 const SUBFLOW_MARKERS = ['S｜', 'Ｓ｜', 'サブ｜', 'サブ', 'Sub｜', 'Sub', 'sub｜', 'sub']
 const MAINFLOW_MARKERS = ['M｜', 'Ｍ｜', 'メイン｜', 'メイン', 'Main｜', 'Main', 'main｜', 'main']
@@ -232,10 +237,16 @@ function checkApiUrls(props, env) {
   for (const [key, expVal] of Object.entries(expected)) {
     if (OPTIONAL_FIELDS.has(key)) continue
     const actual = props[key]
+    const allowed = ALT_ALLOWED_VALUES[key]
+    const expectedDisplay = allowed ? allowed.join(' / ') : String(expVal)
     if (actual === undefined || actual === null) {
-      issues.push({ type: 'missing_field', severity: 'ERROR', field: key, expected: String(expVal), actual: null })
+      issues.push({ type: 'missing_field', severity: 'ERROR', field: key, expected: expectedDisplay, actual: null })
+    } else if (allowed) {
+      if (!allowed.includes(String(actual))) {
+        issues.push({ type: 'value_mismatch', severity: 'ERROR', field: key, expected: expectedDisplay, actual: String(actual) })
+      }
     } else if (String(actual) !== String(expVal)) {
-      issues.push({ type: 'value_mismatch', severity: 'ERROR', field: key, expected: String(expVal), actual: String(actual) })
+      issues.push({ type: 'value_mismatch', severity: 'ERROR', field: key, expected: expectedDisplay, actual: String(actual) })
     }
   }
   return issues
