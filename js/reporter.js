@@ -16,7 +16,7 @@ function _fmtFlow(name) {
 function _renderApiSection(issues, envLabel) {
   const lines = [`## ${_t('sec_api')}`, '']
   if (!issues.length) {
-    lines.push(_t('api_ok'), '')
+    lines.push(`🟢 ${_t('api_ok')}`, '')
     return lines
   }
   for (const i of issues) {
@@ -54,7 +54,7 @@ function _renderPhoneSection(issues) {
   }
 
   if (!warnings.length) {
-    lines.push(_t('phone_ok'), '')
+    lines.push(`🟢 ${_t('phone_ok')}`, '')
   } else {
     for (const i of warnings) {
       const e = SEV_EMOJI[i.severity] || '⚪'
@@ -93,7 +93,7 @@ function _renderJumpSection(issues) {
   }
 
   if (!problems.length) {
-    lines.push(_t('jump_ok'), '')
+    lines.push(`🟢 ${_t('jump_ok')}`, '')
   } else {
     for (const i of problems) {
       const e = SEV_EMOJI[i.severity] || '⚪'
@@ -220,7 +220,7 @@ function _renderScriptSection(title, issues, okMsg) {
 function _renderGenericSection(title, issues, okMsg) {
   const lines = [`## ${title}`, '']
   if (!issues.length) {
-    lines.push(okMsg, '')
+    lines.push(`🟢 ${okMsg}`, '')
     return lines
   }
   const errors = issues.filter(i => i.severity === 'ERROR').length

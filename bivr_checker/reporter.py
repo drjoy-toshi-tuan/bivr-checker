@@ -233,7 +233,7 @@ def _issue_detail(i: Dict) -> str:
 
 def _render_script_issues(issues: List[Dict]) -> List[str]:
     """Render riêng cho check cú pháp JS — nêu rõ dòng lỗi, nội dung dòng, thông báo lỗi."""
-    lines = _section_header("Kiểm tra cú pháp JavaScript — General / Script")
+    lines = _section_header("Kiểm tra cú pháp module [Script]")
     if not issues:
         lines += ["🟢 Không phát hiện lỗi cú pháp JavaScript.", ""]
         return lines
