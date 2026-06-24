@@ -325,12 +325,22 @@
     <div class="result-actions download-row">
       <div class="filename-box">
         <input type="text" id="downloadName" class="filename-input" spellcheck="false" autocomplete="off">
-        <span class="filename-ext">.md</span>
+        <span class="filename-ext stamp-md" id="filenameExt">.md</span>
       </div>
-      <button class="btn-download" id="downloadBtn">
-        <i class="fa-solid fa-download"></i>
-        <span data-i18n="download_btn">レポートをダウンロード</span>
-      </button>
+      <div class="download-controls">
+        <div class="format-toggle" id="formatToggle" role="group" aria-label="Export format">
+          <button type="button" class="format-opt is-active" data-format="md">
+            <i class="fa-solid fa-file-lines"></i> Markdown
+          </button>
+          <button type="button" class="format-opt" data-format="pdf">
+            <i class="fa-solid fa-file-pdf"></i> PDF
+          </button>
+        </div>
+        <button class="btn-download" id="downloadBtn">
+          <i class="fa-solid fa-download"></i>
+          <span data-i18n="download_btn">レポートをダウンロード</span>
+        </button>
+      </div>
     </div>
 
     <div class="preview-head">
@@ -349,6 +359,8 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/checker.js"></script>
 <script src="js/reporter.js"></script>

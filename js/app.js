@@ -7,6 +7,7 @@ const state = {
   masterZipFile: null,   // compare
   parsed: { zip: null, demo: null, master: null }, // parseZipSet results
   lastRun: null,         // { mode, env, demoEnv, masterEnv, bivrName, compareName, apiIssues, phoneIssues, jumpIssues, diffIssues }
+  exportFormat: 'md',    // 'md' | 'pdf' — chọn qua toggle ở khu download
 }
 
 // Which checks belong to which mode
@@ -449,12 +450,32 @@ function setDownloadName() {
   input.value = `${grp}_${t('download_suffix')}`
 }
 
-// ── Download report ───────────────────────────────────────────────────────────
+// ── Toggle định dạng xuất (Markdown <> PDF) ────────────────────────────────────
+function setExportFormat(fmt) {
+  state.exportFormat = fmt === 'pdf' ? 'pdf' : 'md'
+  document.querySelectorAll('.format-opt').forEach(btn => {
+    btn.classList.toggle('is-active', btn.dataset.format === state.exportFormat)
+  })
+  const ext = document.getElementById('filenameExt')
+  if (ext) {
+    const isPdf = state.exportFormat === 'pdf'
+    ext.textContent = isPdf ? '.pdf' : '.md'
+    ext.classList.toggle('stamp-pdf', isPdf)
+    ext.classList.toggle('stamp-md', !isPdf)
+  }
+}
+
+// ── Download report (theo định dạng đã chọn) ───────────────────────────────────
 function downloadReport() {
   if (!state.lastReport) return
   const input = document.getElementById('downloadName')
-  let base = (input.value || '').trim().replace(/\.md$/i, '').trim()
+  const base = (input.value || '').trim().replace(/\.(md|pdf)$/i, '').trim()
   if (!base) { showError(t('err_no_filename')); return }
+  if (state.exportFormat === 'pdf') exportPdf(base)
+  else downloadMarkdown(base)
+}
+
+function downloadMarkdown(base) {
   const blob = new Blob([state.lastReport], { type: 'text/markdown;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -462,6 +483,70 @@ function downloadReport() {
   a.download = base + '.md'
   a.click()
   URL.revokeObjectURL(url)
+}
+
+// PDF "đúng như preview": dựng lại nội dung báo cáo trong 1 vùng off-screen mang
+// đúng theme (nền tối, font Source Code Pro / Noto Sans JP), chụp bằng html2canvas
+// rồi ghép vào jsPDF — mỗi trang được tô nền tối trước để không lòi nền trắng.
+async function exportPdf(base) {
+  const jsPDFCtor = window.jspdf && window.jspdf.jsPDF
+  if (!window.html2canvas || !jsPDFCtor) { showError(t('err_pdf_lib')); return }
+
+  const btn = document.getElementById('downloadBtn')
+  const prevHtml = btn.innerHTML
+  btn.disabled = true
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${t('pdf_exporting')}</span>`
+
+  const PDF_BG = '#0f0d14'
+  const PDF_BG_RGB = [15, 13, 20]
+  let wrapper = null
+  try {
+    const src = document.getElementById('resultPreview')
+    wrapper = document.createElement('div')
+    wrapper.className = 'markdown-body pdf-export'
+    wrapper.innerHTML = src.innerHTML
+    document.body.appendChild(wrapper)
+
+    // Chờ web font sẵn sàng để canvas render đúng font
+    if (document.fonts && document.fonts.ready) { try { await document.fonts.ready } catch (_) {} }
+
+    const canvas = await window.html2canvas(wrapper, {
+      scale: 2,
+      backgroundColor: PDF_BG,
+      useCORS: true,
+    })
+
+    const pdf = new jsPDFCtor({ unit: 'pt', format: 'a4', orientation: 'portrait' })
+    const pageW = pdf.internal.pageSize.getWidth()
+    const pageH = pdf.internal.pageSize.getHeight()
+    const imgW = pageW
+    const imgH = (canvas.height * imgW) / canvas.width
+    const img = canvas.toDataURL('image/jpeg', 0.95)
+    const [r, g, b] = PDF_BG_RGB
+
+    let position = 0
+    let heightLeft = imgH
+    pdf.setFillColor(r, g, b)
+    pdf.rect(0, 0, pageW, pageH, 'F')
+    pdf.addImage(img, 'JPEG', 0, position, imgW, imgH)
+    heightLeft -= pageH
+    while (heightLeft > 0) {
+      position -= pageH
+      pdf.addPage()
+      pdf.setFillColor(r, g, b)
+      pdf.rect(0, 0, pageW, pageH, 'F')
+      pdf.addImage(img, 'JPEG', 0, position, imgW, imgH)
+      heightLeft -= pageH
+    }
+    pdf.save(base + '.pdf')
+  } catch (err) {
+    showError('PDF: ' + err.message)
+    console.error(err)
+  } finally {
+    if (wrapper) wrapper.remove()
+    btn.disabled = false
+    btn.innerHTML = prevHtml
+  }
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -525,6 +610,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('runBtn').addEventListener('click', runChecks)
   document.getElementById('downloadBtn').addEventListener('click', downloadReport)
+
+  // Toggle định dạng xuất (Markdown <> PDF) — đổi stamp đuôi file theo lựa chọn
+  document.querySelectorAll('.format-opt').forEach(btn => {
+    btn.addEventListener('click', () => setExportFormat(btn.dataset.format))
+  })
 
   // Collapse / expand toggles
   document.querySelectorAll('.collapse-btn').forEach(btn => {
